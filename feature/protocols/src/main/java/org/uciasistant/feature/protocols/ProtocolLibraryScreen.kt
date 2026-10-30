@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -44,9 +43,9 @@ fun ProtocolLibraryScreen(onBack: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
     var showRequirements by remember { mutableStateOf(false) }
     var checkingFile by remember { mutableStateOf(false) }
-    var selectedPdfName by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedPdfSize by rememberSaveable { mutableStateOf<Long?>(null) }
-    var fileError by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedPdfName by remember { mutableStateOf<String?>(null) }
+    var selectedPdfSize by remember { mutableStateOf<Long?>(null) }
+    var fileError by remember { mutableStateOf<String?>(null) }
 
     val pdfPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -336,7 +335,7 @@ private data class PdfFileMetadata(
 
 private fun inspectPdf(context: Context, uri: Uri): PdfFileMetadata {
     val header = context.contentResolver.openInputStream(uri)?.use { input ->
-        val bytes = ByteArray(5)
+        val bytes = ByteArray(1024)
         var count = 0
         while (count < bytes.size) {
             val read = input.read(bytes, count, bytes.size - count)
@@ -346,7 +345,7 @@ private fun inspectPdf(context: Context, uri: Uri): PdfFileMetadata {
         String(bytes, 0, count, Charsets.US_ASCII)
     } ?: throw IllegalArgumentException("No se pudo leer el archivo seleccionado.")
 
-    if (header != "%PDF-") {
+    if (!header.contains("%PDF-")) {
         throw IllegalArgumentException("El archivo no parece ser un PDF válido.")
     }
 
