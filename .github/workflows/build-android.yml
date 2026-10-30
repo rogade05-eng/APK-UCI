@@ -33,7 +33,26 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Assemble debug APK
-        run: ./gradlew --no-daemon :app:assembleDebug
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:assembleDebug 2>&1 | tee "$RUNNER_TEMP/gradle-assemble.log"
+
+      - name: Report Gradle diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/gradle-assemble.log"
+          if [[ -f "$log" ]]; then
+            diagnostics="$(grep -E '(^e: |error:|Unresolved reference|FAILURE:|What went wrong|Execution failed|Could not)' "$log" | tail -n 20 || true)"
+            if [[ -z "$diagnostics" ]]; then
+              diagnostics="$(tail -n 15 "$log")"
+            fi
+            while IFS= read -r line; do
+              [[ -z "$line" ]] && continue
+              echo "::error title=Gradle diagnostic::$line"
+            done <<< "$diagnostics"
+          fi
 
       - name: Verify APK package and debug signature
         shell: bash
