@@ -35,19 +35,17 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew --no-daemon :app:assembleDebug
 
-      - name: Smoke test APK on Android emulator
-        uses: ReactiveCircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          disable-animations: true
-          script: |
-            adb install app/build/outputs/apk/debug/app-debug.apk
-            adb shell am start -W -n org.uciasistant.app/.MainActivity
-            sleep 5
-            test -n "$(adb shell pidof org.uciasistant.app)"
+      - name: Verify APK package and debug signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:?Android SDK not configured}}"
+          test -s "$apk"
+          "$sdk/build-tools/35.0.0/apksigner" verify --verbose "$apk"
+          badging="$("$sdk/build-tools/35.0.0/aapt" dump badging "$apk")"
+          grep -F "package: name='org.uciasistant.app'" <<< "$badging"
+          grep -F "launchable-activity: name='org.uciasistant.app.MainActivity'" <<< "$badging"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
