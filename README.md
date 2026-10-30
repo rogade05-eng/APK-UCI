@@ -8,8 +8,8 @@ Se creó un **andamiaje Android nativo** en Kotlin/Jetpack Compose con navegaci�
 
 - `:app`: actividad y navegación entre pantallas.
 - `:feature:home`: pantalla inicial de alcance y estado.
-- `:feature:protocols`: estado vacío de la biblioteca; no contiene protocolos clínicos.
-- `:feature:alerts`: estado vacío de alertas; no evalúa datos ni activa reglas.
+- `:feature:protocols`: biblioteca vacía con requisitos de publicación desplegables; no contiene protocolos clínicos.
+- `:feature:alerts`: estado sin reglas, con decisiones pendientes desplegables; no evalúa datos ni activa alertas.
 - `:core:designsystem`: tema visual y aviso de prototipo reutilizable.
 
 Las pantallas de protocolos y alertas son marcadores de alcance, no funciones clínicas. No almacena datos de pacientes, no contiene escalas, umbrales, alertas activas ni recomendaciones clínicas; tampoco declara permisos de red ni se conecta a monitores, ventiladores o historias clínicas. No debe usarse en atención clínica. El identificador de paquete `org.uciasistant.app` es provisional.
