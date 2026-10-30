@@ -36,7 +36,7 @@ internal class PendingProtocolDocumentStore(context: Context) {
 
     fun listDocuments(): List<PendingProtocolDocument> {
         ensureDirectory(documentsDirectory)
-        documentsDirectory.listFiles { file -> file.name.endsWith(METADATA_SUFFIX) }
+        return documentsDirectory.listFiles { file -> file.name.endsWith(METADATA_SUFFIX) }
             .orEmpty()
             .mapNotNull { metadataFile ->
                 runCatching {
