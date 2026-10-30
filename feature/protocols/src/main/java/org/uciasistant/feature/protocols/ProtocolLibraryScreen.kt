@@ -1,16 +1,20 @@
 package org.uciasistant.feature.protocols
 
-import android.content.Context
-import android.net.Uri
-import android.provider.OpenableColumns
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
 import android.text.format.Formatter
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,15 +27,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,138 +50,176 @@ import org.uciasistant.core.designsystem.PrototypeNotice
 
 @Composable
 fun ProtocolLibraryScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext
     val coroutineScope = rememberCoroutineScope()
+    val documentStore = remember(context) { PendingProtocolDocumentStore(context) }
+    var documents by remember { mutableStateOf(emptyList<PendingProtocolDocument>()) }
+    var isLoadingDocuments by remember { mutableStateOf(true) }
+    var isImporting by remember { mutableStateOf(false) }
     var showRequirements by remember { mutableStateOf(false) }
-    var checkingFile by remember { mutableStateOf(false) }
-    var selectedPdfName by remember { mutableStateOf<String?>(null) }
-    var selectedPdfSize by remember { mutableStateOf<Long?>(null) }
     var fileError by remember { mutableStateOf<String?>(null) }
+    var activeDocument by remember { mutableStateOf<PendingProtocolDocument?>(null) }
+
+    LaunchedEffect(documentStore) {
+        val result = withContext(Dispatchers.IO) {
+            runCatching {
+                documentStore.clearPreviewCache()
+                documentStore.listDocuments()
+            }
+        }
+        result.fold(
+            onSuccess = { documents = it },
+            onFailure = { fileError = "No se pudo abrir la lista local de documentos." },
+        )
+        isLoadingDocuments = false
+    }
 
     val pdfPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri != null) {
-            checkingFile = true
+            isImporting = true
             fileError = null
             coroutineScope.launch {
                 val result = withContext(Dispatchers.IO) {
-                    runCatching { inspectPdf(context, uri) }
+                    runCatching {
+                        documentStore.importPdf(uri)
+                        documentStore.listDocuments()
+                    }
                 }
                 result.fold(
-                    onSuccess = { file ->
-                        selectedPdfName = file.name
-                        selectedPdfSize = file.sizeBytes
-                        fileError = null
-                    },
+                    onSuccess = { documents = it },
                     onFailure = { error ->
-                        selectedPdfName = null
-                        selectedPdfSize = null
-                        fileError = error.message ?: "No se pudo comprobar el archivo seleccionado."
+                        fileError = error.message ?: "No se pudo importar el PDF seleccionado."
                     },
                 )
-                checkingFile = false
+                isImporting = false
             }
         }
     }
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            TextButton(onClick = onBack) {
-                Text(text = "← Inicio")
-            }
+    val documentToReview = activeDocument
+    if (documentToReview != null) {
+        PdfReviewScreen(
+            document = documentToReview,
+            documentStore = documentStore,
+            onBack = { activeDocument = null },
+        )
+    } else {
+        Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                TextButton(onClick = onBack) {
+                    Text(text = "← Inicio")
+                }
 
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "Protocolos de consulta",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Protocolos de consulta",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Biblioteca independiente de las alertas, para consulta profesional.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                PrototypeNotice(modifier = Modifier.fillMaxWidth())
+
+                LibrarySummaryCard(documentCount = documents.size)
+
+                DocumentPickerCard(
+                    documents = documents,
+                    isBusy = isLoadingDocuments || isImporting,
+                    error = fileError,
+                    onSelectPdf = { pdfPicker.launch(arrayOf("application/pdf")) },
+                    onOpenDocument = { activeDocument = it },
+                    onDeleteDocument = { document ->
+                        coroutineScope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    if (!documentStore.deleteDocument(document.id)) {
+                                        throw IOException("No se pudo eliminar el documento local.")
+                                    }
+                                    documentStore.listDocuments()
+                                }
+                            }
+                            result.fold(
+                                onSuccess = { documents = it; fileError = null },
+                                onFailure = { error ->
+                                    fileError = error.message ?: "No se pudo eliminar el documento."
+                                },
+                            )
+                        }
+                    },
                 )
+
+                InfoCard(
+                    title = "Documentos pendientes, no protocolos aprobados",
+                    description = "Los PDF importados se guardan cifrados en el espacio privado de esta app para revisión local. No se publican en la biblioteca ni activan alertas. No importes informes ni archivos con datos identificables de pacientes.",
+                )
+
+                TextButton(onClick = { showRequirements = !showRequirements }) {
+                    Text(
+                        text = if (showRequirements) {
+                            "Ocultar requisitos de publicación"
+                        } else {
+                            "Ver requisitos de publicación"
+                        },
+                    )
+                }
+
+                if (showRequirements) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        RequirementCard(
+                            number = "01",
+                            title = "Definir alcance y población",
+                            description = "Precisar los dominios pediátricos y los límites de inclusión antes de organizar el contenido.",
+                        )
+                        RequirementCard(
+                            number = "02",
+                            title = "Confirmar fuente y derechos",
+                            description = "Documentar la procedencia del material y contar con autorización para su uso y adaptación.",
+                        )
+                        RequirementCard(
+                            number = "03",
+                            title = "Completar revisiones",
+                            description = "Someter cada documento a revisión clínica e institucional y a la evaluación regulatoria que corresponda.",
+                        )
+                        RequirementCard(
+                            number = "04",
+                            title = "Controlar versión y vigencia",
+                            description = "Definir responsables de mantenimiento, fechas de revisión y retirada de versiones sustituidas.",
+                        )
+                    }
+                }
+
+                InfoCard(
+                    title = "Relación con Alertas",
+                    description = "Una futura alerta podrá abrir el protocolo vigente aprobado que corresponda para consulta. La correspondencia todavía no está definida; el profesional conserva la decisión.",
+                )
+
                 Text(
-                    text = "Biblioteca independiente de las alertas, para consulta profesional.",
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "Sin contenido clínico aprobado · Sin aplicación a pacientes",
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
-            PrototypeNotice(modifier = Modifier.fillMaxWidth())
-
-            LibrarySummaryCard()
-
-            DocumentPickerCard(
-                isChecking = checkingFile,
-                selectedName = selectedPdfName,
-                selectedSize = selectedPdfSize?.let {
-                    Formatter.formatShortFileSize(context, it)
-                },
-                error = fileError,
-                onSelectPdf = { pdfPicker.launch(arrayOf("application/pdf")) },
-            )
-
-            InfoCard(
-                title = "Aún no hay protocolos disponibles",
-                description = "No se han cargado documentos con fuente, derechos de uso y aprobación verificados. Seleccionar un PDF no lo aprueba ni lo publica en la biblioteca.",
-            )
-
-            TextButton(onClick = { showRequirements = !showRequirements }) {
-                Text(
-                    text = if (showRequirements) {
-                        "Ocultar requisitos de publicación"
-                    } else {
-                        "Ver requisitos de publicación"
-                    },
-                )
-            }
-
-            if (showRequirements) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    RequirementCard(
-                        number = "01",
-                        title = "Definir alcance y población",
-                        description = "Precisar los dominios pediátricos y los límites de inclusión antes de organizar el contenido.",
-                    )
-                    RequirementCard(
-                        number = "02",
-                        title = "Confirmar fuente y derechos",
-                        description = "Documentar la procedencia del material y contar con autorización para su uso y adaptación.",
-                    )
-                    RequirementCard(
-                        number = "03",
-                        title = "Completar revisiones",
-                        description = "Someter cada documento a revisión clínica e institucional y a la evaluación regulatoria que corresponda.",
-                    )
-                    RequirementCard(
-                        number = "04",
-                        title = "Controlar versión y vigencia",
-                        description = "Definir responsables de mantenimiento, fechas de revisión y retirada de versiones sustituidas.",
-                    )
-                }
-            }
-
-            InfoCard(
-                title = "Relación con Alertas",
-                description = "Una futura alerta podrá abrir el protocolo vigente aprobado que corresponda para consulta. La correspondencia todavía no está definida; el profesional conserva la decisión.",
-            )
-
-            Text(
-                text = "Sin contenido clínico · Sin aplicación a pacientes",
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
 
 @Composable
-private fun LibrarySummaryCard() {
+private fun LibrarySummaryCard(documentCount: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -195,12 +244,16 @@ private fun LibrarySummaryCard() {
                 )
             }
             Text(
-                text = "0 protocolos",
+                text = "0 protocolos aprobados",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "No hay documentos aprobados cargados en esta versión.",
+                text = if (documentCount == 0) {
+                    "No hay documentos pendientes de revisión."
+                } else {
+                    "$documentCount ${if (documentCount == 1) "documento" else "documentos"} pendiente(s) de revisión; no están publicados."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -210,11 +263,12 @@ private fun LibrarySummaryCard() {
 
 @Composable
 private fun DocumentPickerCard(
-    isChecking: Boolean,
-    selectedName: String?,
-    selectedSize: String?,
+    documents: List<PendingProtocolDocument>,
+    isBusy: Boolean,
     error: String?,
     onSelectPdf: () -> Unit,
+    onOpenDocument: (PendingProtocolDocument) -> Unit,
+    onDeleteDocument: (PendingProtocolDocument) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -226,47 +280,206 @@ private fun DocumentPickerCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Seleccionar documento para revisión",
+                text = "Importar PDF para revisión",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Elige un PDF desde el selector de Android. Si viene de la PC, primero cópialo al teléfono o a un almacenamiento accesible desde el dispositivo.",
+                text = "Si el archivo está en la PC, cópialo primero al teléfono o a un almacenamiento accesible desde Android. Selecciona solo documentos de protocolo; no informes de pacientes.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = onSelectPdf, enabled = !isChecking) {
-                Text(text = if (isChecking) "Comprobando PDF…" else "Elegir PDF")
+            TextButton(onClick = onSelectPdf, enabled = !isBusy) {
+                Text(text = if (isBusy) "Importando o cargando…" else "Elegir PDF")
             }
-            if (selectedName != null) {
+
+            if (documents.isEmpty() && !isBusy) {
                 Text(
-                    text = "PDF seleccionado · Pendiente de revisión",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = selectedName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = selectedSize ?: "Tamaño no disponible",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = "Solo se verificaron el formato y los metadatos. El contenido no se guarda ni se publica en esta versión.",
+                    text = "No hay PDF importados.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            documents.forEach { document ->
+                PendingDocumentCard(
+                    document = document,
+                    onOpen = { onOpenDocument(document) },
+                    onDelete = { onDeleteDocument(document) },
+                )
+            }
+
             if (error != null) {
                 Text(
                     text = error,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PendingDocumentCard(
+    document: PendingProtocolDocument,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = "PENDIENTE DE REVISIÓN · NO APROBADO",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = document.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = Formatter.formatShortFileSize(LocalContext.current, document.sizeBytes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onOpen) {
+                Text(text = "Abrir para revisar")
+            }
+            TextButton(onClick = onDelete) {
+                Text(text = "Eliminar del dispositivo")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PdfReviewScreen(
+    document: PendingProtocolDocument,
+    documentStore: PendingProtocolDocumentStore,
+    onBack: () -> Unit,
+) {
+    var previewFile by remember(document.id) { mutableStateOf<File?>(null) }
+    var previewError by remember(document.id) { mutableStateOf<String?>(null) }
+    var isPreparing by remember(document.id) { mutableStateOf(true) }
+
+    BackHandler(onBack = onBack)
+
+    LaunchedEffect(document.id) {
+        val result = withContext(Dispatchers.IO) {
+            runCatching { documentStore.createPreviewFile(document.id) }
+        }
+        result.fold(
+            onSuccess = { previewFile = it },
+            onFailure = { previewError = "No se pudo descifrar y abrir el PDF local." },
+        )
+        isPreparing = false
+    }
+
+    DisposableEffect(previewFile) {
+        onDispose { previewFile?.delete() }
+    }
+
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TextButton(onClick = onBack) {
+                Text(text = "← Protocolos")
+            }
+            Text(
+                text = document.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+            ) {
+                Text(
+                    text = "Documento local pendiente de revisión. No está aprobado ni publicado para uso asistencial.",
+                    modifier = Modifier.padding(14.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+
+            when {
+                isPreparing -> Text("Preparando vista local…")
+                previewError != null -> Text(
+                    text = previewError.orEmpty(),
+                    color = MaterialTheme.colorScheme.error,
+                )
+                previewFile != null -> PdfPageList(
+                    file = previewFile!!,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PdfPageList(file: File, modifier: Modifier = Modifier) {
+    var pageCount by remember(file) { mutableStateOf<Int?>(null) }
+    var pageCountError by remember(file) { mutableStateOf(false) }
+
+    LaunchedEffect(file) {
+        val result = withContext(Dispatchers.IO) {
+            runCatching { readPdfPageCount(file) }
+        }
+        result.fold(
+            onSuccess = { pageCount = it },
+            onFailure = { pageCountError = true },
+        )
+    }
+
+    when {
+        pageCountError -> Text("No se pudieron leer las páginas del PDF.")
+        pageCount == null -> Text("Cargando documento…")
+        pageCount == 0 -> Text("El PDF no contiene páginas visibles.")
+        else -> LazyColumn(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(count = pageCount ?: 0) { pageIndex ->
+                val renderResult by produceState<Result<Bitmap>?>(
+                    initialValue = null,
+                    key1 = file,
+                    key2 = pageIndex,
+                ) {
+                    value = withContext(Dispatchers.IO) {
+                        runCatching { renderPdfPage(file, pageIndex) }
+                    }
+                }
+                when {
+                    renderResult == null -> Text("Cargando página ${pageIndex + 1}…")
+                    renderResult?.isSuccess == true -> Image(
+                        bitmap = renderResult!!.getOrThrow().asImageBitmap(),
+                        contentDescription = "Página ${pageIndex + 1} del PDF",
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                    )
+                    else -> Text(
+                        text = "No se pudo mostrar la página ${pageIndex + 1}.",
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         }
     }
@@ -328,46 +541,27 @@ private fun InfoCard(title: String, description: String) {
     }
 }
 
-private data class PdfFileMetadata(
-    val name: String,
-    val sizeBytes: Long?,
-)
-
-private fun inspectPdf(context: Context, uri: Uri): PdfFileMetadata {
-    val header = context.contentResolver.openInputStream(uri)?.use { input ->
-        val bytes = ByteArray(1024)
-        var count = 0
-        while (count < bytes.size) {
-            val read = input.read(bytes, count, bytes.size - count)
-            if (read <= 0) break
-            count += read
-        }
-        String(bytes, 0, count, Charsets.US_ASCII)
-    } ?: throw IllegalArgumentException("No se pudo leer el archivo seleccionado.")
-
-    if (!header.contains("%PDF-")) {
-        throw IllegalArgumentException("El archivo no parece ser un PDF válido.")
+private fun readPdfPageCount(file: File): Int =
+    ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+        PdfRenderer(descriptor).use { renderer -> renderer.pageCount }
     }
 
-    var name = "documento.pdf"
-    var sizeBytes: Long? = null
-    context.contentResolver.query(
-        uri,
-        arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE),
-        null,
-        null,
-        null,
-    )?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val nameColumn = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (nameColumn >= 0) {
-                name = cursor.getString(nameColumn)?.takeIf { it.isNotBlank() } ?: name
-            }
-            val sizeColumn = cursor.getColumnIndex(OpenableColumns.SIZE)
-            if (sizeColumn >= 0 && !cursor.isNull(sizeColumn)) {
-                sizeBytes = cursor.getLong(sizeColumn)
+private fun renderPdfPage(file: File, pageIndex: Int): Bitmap =
+    ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+        PdfRenderer(descriptor).use { renderer ->
+            renderer.openPage(pageIndex).use { page ->
+                val maxPageEdge = maxOf(page.width, page.height).coerceAtLeast(1)
+                val scale = minOf(PDF_RENDER_SCALE, MAX_RENDER_EDGE / maxPageEdge)
+                val bitmap = Bitmap.createBitmap(
+                    (page.width * scale).toInt().coerceAtLeast(1),
+                    (page.height * scale).toInt().coerceAtLeast(1),
+                    Bitmap.Config.ARGB_8888,
+                )
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                bitmap
             }
         }
     }
-    return PdfFileMetadata(name = name, sizeBytes = sizeBytes)
-}
+
+private const val PDF_RENDER_SCALE = 2f
+private const val MAX_RENDER_EDGE = 1600f
