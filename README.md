@@ -8,7 +8,7 @@ Se creó un **andamiaje Android nativo** en Kotlin/Jetpack Compose con navegaci�
 
 - `:app`: actividad y navegación entre pantallas.
 - `:feature:home`: pantalla inicial de alcance y estado.
-- `:feature:protocols`: biblioteca vacía con requisitos de publicación desplegables; no contiene protocolos clínicos.
+- `:feature:protocols`: biblioteca clínica vacía; permite seleccionar un PDF para revisión y comprobar su cabecera/metadatos, pero no guarda ni publica su contenido.
 - `:feature:alerts`: estado sin reglas, con decisiones pendientes desplegables; no evalúa datos ni activa alertas.
 - `:core:designsystem`: tema visual y aviso de prototipo reutilizable.
 
