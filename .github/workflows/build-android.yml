@@ -73,3 +73,54 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+  protocol-import-runtime:
+    name: Test encrypted PDF import on Android
+    needs: assemble
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK components
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Run encrypted PDF import instrumentation test
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: aosp_atd
+          arch: x86_64
+          emulator-boot-timeout: 300
+          disable-animations: true
+          script: |
+            set -o pipefail
+            ./gradlew --no-daemon :feature:protocols:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/android-test.log"
+
+      - name: Report instrumentation diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/android-test.log"
+          if [[ -f "$log" ]]; then
+            diagnostics="$(grep -E '(^e: |error:|FAILED|Failure|failed|FAILURE:|What went wrong|Execution failed|Could not)' "$log" | tail -n 20 || true)"
+            if [[ -z "$diagnostics" ]]; then
+              diagnostics="$(tail -n 15 "$log")"
+            fi
+            while IFS= read -r line; do
+              [[ -z "$line" ]] && continue
+              echo "::error title=Android instrumentation diagnostic::$line"
+            done <<< "$diagnostics"
+          fi
