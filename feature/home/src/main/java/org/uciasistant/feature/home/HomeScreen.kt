@@ -30,6 +30,7 @@ fun HomeScreen(
     onOpenProtocols: () -> Unit,
     onOpenAlerts: () -> Unit,
     onOpenCalculator: () -> Unit,
+    onOpenHandoff: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -88,7 +89,14 @@ fun HomeScreen(
             AvailableFeatureCard(
                 title = "Calculadoras y conversores",
                 description = "Incluye conversión de unidades, índices de oxigenación y puntuación Phoenix pediátrica; no genera diagnósticos ni clasificaciones.",
+                actionLabel = "Abrir calculadoras",
                 onClick = onOpenCalculator,
+            )
+            AvailableFeatureCard(
+                title = "Continuidad y entrega",
+                description = "Plantilla temporal de traslado con origen, destino, tiempos y resumen estructurado. Solo funciona en memoria; no guarda ni exporta.",
+                actionLabel = "Abrir plantilla temporal",
+                onClick = onOpenHandoff,
             )
 
             SectionHeading(text = "FUNCIONES CLÍNICAS EN DEFINICIÓN")
@@ -118,14 +126,14 @@ fun HomeScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "Incluye conversión de unidades e índices/puntuaciones pediátricas sin clasificación diagnóstica ni interpretación automática. No almacena pacientes, no contiene protocolos asistenciales y no genera recomendaciones, IA, prescripción automática ni control de equipos.",
+                        text = "Incluye conversión de unidades, índices/puntuaciones pediátricas y una plantilla de traspaso en memoria. No hay expediente ni almacenamiento persistente de datos de pacientes; la plantilla no guarda ni exporta. No contiene protocolos asistenciales ni genera recomendaciones, IA, diagnósticos, prescripción automática o control de equipos.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
 
             Text(
-                text = "Sin datos de pacientes · Sin diagnóstico autónomo · Sin prescripción automática",
+                text = "Sin expediente persistente · Traspaso solo temporal · Sin diagnóstico autónomo ni prescripción automática",
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -173,6 +181,7 @@ private fun ContextCard(title: String, description: String) {
 private fun AvailableFeatureCard(
     title: String,
     description: String,
+    actionLabel: String,
     onClick: () -> Unit,
 ) {
     Card(
@@ -201,7 +210,7 @@ private fun AvailableFeatureCard(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             TextButton(onClick = onClick) {
-                Text(text = "Abrir calculadoras")
+                Text(text = actionLabel)
             }
         }
     }
@@ -253,6 +262,7 @@ private fun HomeScreenPreview() {
             onOpenProtocols = {},
             onOpenAlerts = {},
             onOpenCalculator = {},
+            onOpenHandoff = {},
         )
     }
 }

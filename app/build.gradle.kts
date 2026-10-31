@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":feature:protocols"))
     implementation(project(":feature:alerts"))
     implementation(project(":feature:calculators"))
+    implementation(project(":feature:handoff"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

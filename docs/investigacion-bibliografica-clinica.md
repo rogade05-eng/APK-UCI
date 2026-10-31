@@ -4,7 +4,7 @@
 
 **Tipo de documento:** búsqueda bibliográfica orientativa y requisitos de desarrollo; no es revisión sistemática, guía clínica, dictamen jurídico ni validación de una APK.
 
-**Estado del producto:** prototipo con conversor general, índices pediátricos de oxigenación P/F, S/F, OI y OSI basados en PALICC-2, y cálculo de la puntuación Phoenix de cuatro sistemas sin aplicar sus criterios binarios de clasificación. No implementa diagnóstico autónomo, recomendaciones ni tratamiento; quedan pendientes protocolos, procedimientos y demás funciones clínicas.
+**Estado del producto:** prototipo con conversor general, índices pediátricos de oxigenación P/F, S/F, OI y OSI basados en PALICC-2, puntuación Phoenix de cuatro sistemas y una plantilla de traspaso pediátrico en memoria. La plantilla no guarda ni exporta datos; los módulos clínicos permanecen no validados y no autorizados para uso asistencial. No implementa diagnóstico autónomo, recomendaciones ni tratamiento; siguen pendientes los protocolos, procedimientos, expediente persistente y demás funciones clínicas.
 
 > **Límite de seguridad.** Este informe no reproduce fórmulas, puntos de corte, dosis, secuencias terapéuticas ni instrucciones de reanimación. Identifica fuentes y cuestiones de seguridad y gobierno para el desarrollo y eventual uso clínico. La revisión especializada y la validación clínica son necesarias antes de habilitar una función para uso asistencial, pero no constituyen un bloqueo previo para completar el código y las pruebas basados en fuentes públicas.
 

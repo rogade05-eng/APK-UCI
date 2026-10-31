@@ -16,6 +16,7 @@ import org.uciasistant.core.designsystem.UciAssistantTheme
 import org.uciasistant.feature.alerts.AlertsOverviewScreen
 import org.uciasistant.feature.calculators.CalculatorsHomeScreen
 import org.uciasistant.feature.home.HomeScreen
+import org.uciasistant.feature.handoff.HandoffScreen
 import org.uciasistant.feature.protocols.ProtocolLibraryScreen
 
 private enum class Destination {
@@ -23,6 +24,7 @@ private enum class Destination {
     Protocols,
     Alerts,
     Calculators,
+    Handoff,
 }
 
 class MainActivity : ComponentActivity() {
@@ -45,6 +47,7 @@ class MainActivity : ComponentActivity() {
                             onOpenProtocols = { destination = Destination.Protocols },
                             onOpenAlerts = { destination = Destination.Alerts },
                             onOpenCalculator = { destination = Destination.Calculators },
+                            onOpenHandoff = { destination = Destination.Handoff },
                         )
 
                         Destination.Protocols -> ProtocolLibraryScreen(
@@ -56,6 +59,10 @@ class MainActivity : ComponentActivity() {
                         )
 
                         Destination.Calculators -> CalculatorsHomeScreen(
+                            onBack = { destination = Destination.Home },
+                        )
+
+                        Destination.Handoff -> HandoffScreen(
                             onBack = { destination = Destination.Home },
                         )
                     }
