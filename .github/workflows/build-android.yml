@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   assemble:
-    name: Assemble non-clinical debug APK
+    name: Assemble offline debug APK
     runs-on: ubuntu-24.04
     steps:
       - name: Check out source

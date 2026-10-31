@@ -86,8 +86,8 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(2.dp))
             SectionHeading(text = "HERRAMIENTAS DISPONIBLES")
             AvailableFeatureCard(
-                title = "Conversor de unidades",
-                description = "Convierte masa, longitud, volumen y temperatura sin conexión. No calcula dosis ni interpreta datos clínicos.",
+                title = "Calculadoras y conversores",
+                description = "Incluye conversión de unidades e índices pediátricos de oxigenación P/F, S/F, OI y OSI; no clasifica PARDS.",
                 onClick = onOpenCalculator,
             )
 
@@ -118,14 +118,14 @@ fun HomeScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "Solo incluye conversiones matemáticas de unidades, sin interpretación clínica. No almacena pacientes ni contiene escalas, protocolos asistenciales o recomendaciones. Sin IA, prescripción automática ni control de equipos.",
+                        text = "Incluye conversión de unidades e índices de oxigenación, sin clasificación clínica ni interpretación automática. No almacena pacientes, no contiene protocolos asistenciales y no genera recomendaciones, IA, prescripción automática ni control de equipos.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
 
             Text(
-                text = "Sin datos de pacientes · Sin lógica clínica activa",
+                text = "Sin datos de pacientes · Sin diagnóstico autónomo · Sin prescripción automática",
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -185,7 +185,7 @@ private fun AvailableFeatureCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "HERRAMIENTA MATEMÁTICA · NO CLÍNICA",
+                text = "HERRAMIENTAS OFFLINE · SIN DIAGNÓSTICO NI RECOMENDACIÓN",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.Bold,
@@ -201,7 +201,7 @@ private fun AvailableFeatureCard(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             TextButton(onClick = onClick) {
-                Text(text = "Abrir conversor")
+                Text(text = "Abrir calculadoras")
             }
         }
     }

@@ -1,5 +1,6 @@
 package org.uciasistant.feature.calculators
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,8 @@ fun UnitConverterScreen(onBack: () -> Unit) {
         }
     }
 
+    BackHandler(onBack = onBack)
+
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
         Column(
             modifier = Modifier
@@ -59,7 +62,7 @@ fun UnitConverterScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             TextButton(onClick = onBack) {
-                Text(text = "← Inicio")
+                Text(text = "← Calculadoras")
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
