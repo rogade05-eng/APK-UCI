@@ -87,7 +87,7 @@ fun HomeScreen(
             SectionHeading(text = "HERRAMIENTAS DISPONIBLES")
             AvailableFeatureCard(
                 title = "Calculadoras y conversores",
-                description = "Incluye conversión de unidades e índices pediátricos de oxigenación P/F, S/F, OI y OSI; no clasifica PARDS.",
+                description = "Incluye conversión de unidades, índices de oxigenación y puntuación Phoenix pediátrica; no genera diagnósticos ni clasificaciones.",
                 onClick = onOpenCalculator,
             )
 
@@ -118,7 +118,7 @@ fun HomeScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "Incluye conversión de unidades e índices de oxigenación, sin clasificación clínica ni interpretación automática. No almacena pacientes, no contiene protocolos asistenciales y no genera recomendaciones, IA, prescripción automática ni control de equipos.",
+                        text = "Incluye conversión de unidades e índices/puntuaciones pediátricas sin clasificación diagnóstica ni interpretación automática. No almacena pacientes, no contiene protocolos asistenciales y no genera recomendaciones, IA, prescripción automática ni control de equipos.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }

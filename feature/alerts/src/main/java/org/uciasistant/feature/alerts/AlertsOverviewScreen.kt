@@ -89,8 +89,8 @@ fun AlertsOverviewScreen(onBack: () -> Unit) {
                     )
                     RequirementCard(
                         number = "03",
-                        title = "Validar criterios clínicos",
-                        description = "Los activadores y cualquier umbral requieren especificación y validación por profesionales especializados; aquí no se proponen valores ni fórmulas.",
+                        title = "Investigar criterios y documentar su validación",
+                        description = "El desarrollo y las pruebas pueden avanzar con fuentes identificadas. La revisión especializada y la validación son necesarias antes de habilitar una regla para uso asistencial, no un bloqueo para completar el código.",
                     )
                     RequirementCard(
                         number = "04",

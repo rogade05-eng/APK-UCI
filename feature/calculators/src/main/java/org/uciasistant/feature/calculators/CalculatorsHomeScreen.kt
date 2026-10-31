@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 private enum class CalculatorTool {
     UnitConverter,
     Oxygenation,
+    Phoenix,
 }
 
 @Composable
@@ -35,10 +36,12 @@ fun CalculatorsHomeScreen(onBack: () -> Unit) {
     when (selectedTool) {
         CalculatorTool.UnitConverter -> UnitConverterScreen(onBack = { selectedTool = null })
         CalculatorTool.Oxygenation -> OxygenationCalculatorScreen(onBack = { selectedTool = null })
+        CalculatorTool.Phoenix -> PhoenixCalculatorScreen(onBack = { selectedTool = null })
         null -> CalculatorsMenu(
             onBack = onBack,
             onOpenUnitConverter = { selectedTool = CalculatorTool.UnitConverter },
             onOpenOxygenation = { selectedTool = CalculatorTool.Oxygenation },
+            onOpenPhoenix = { selectedTool = CalculatorTool.Phoenix },
         )
     }
 }
@@ -48,6 +51,7 @@ private fun CalculatorsMenu(
     onBack: () -> Unit,
     onOpenUnitConverter: () -> Unit,
     onOpenOxygenation: () -> Unit,
+    onOpenPhoenix: () -> Unit,
 ) {
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
         Column(
@@ -78,6 +82,12 @@ private fun CalculatorsMenu(
                 description = "Calcula P/F, S/F, OI y OSI con las entradas disponibles; no clasifica PARDS.",
                 source = "PALICC-2 · 2023 · población pediátrica, no neonatal",
                 onClick = onOpenOxygenation,
+            )
+            CalculatorToolCard(
+                title = "Phoenix · puntuación pediátrica",
+                description = "Puntuaciones de cuatro sistemas para evaluaciones introducidas; no aplica criterios de sepsis o shock.",
+                source = "JAMA 2024 · conjunto de datos manual · sin almacenamiento",
+                onClick = onOpenPhoenix,
             )
             CalculatorToolCard(
                 title = "Conversor general de unidades",
