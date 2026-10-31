@@ -29,6 +29,7 @@ import org.uciasistant.core.designsystem.UciAssistantTheme
 fun HomeScreen(
     onOpenProtocols: () -> Unit,
     onOpenAlerts: () -> Unit,
+    onOpenCalculator: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -83,7 +84,14 @@ fun HomeScreen(
             )
 
             Spacer(modifier = Modifier.height(2.dp))
-            SectionHeading(text = "FUNCIONES EN DEFINICIÓN")
+            SectionHeading(text = "HERRAMIENTAS DISPONIBLES")
+            AvailableFeatureCard(
+                title = "Conversor de unidades",
+                description = "Convierte masa, longitud, volumen y temperatura sin conexión. No calcula dosis ni interpreta datos clínicos.",
+                onClick = onOpenCalculator,
+            )
+
+            SectionHeading(text = "FUNCIONES CLÍNICAS EN DEFINICIÓN")
             PlannedFeatureCard(
                 title = "Protocolos de consulta",
                 description = "Biblioteca prevista. Contenido, derechos y aprobaciones pendientes.",
@@ -110,7 +118,7 @@ fun HomeScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "No almacena pacientes, no calcula escalas y no contiene recomendaciones clínicas. Sin IA, prescripción automática ni control de equipos.",
+                        text = "Solo incluye conversiones matemáticas de unidades, sin interpretación clínica. No almacena pacientes ni contiene escalas, protocolos asistenciales o recomendaciones. Sin IA, prescripción automática ni control de equipos.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -162,6 +170,44 @@ private fun ContextCard(title: String, description: String) {
 }
 
 @Composable
+private fun AvailableFeatureCard(
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "HERRAMIENTA MATEMÁTICA · NO CLÍNICA",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            TextButton(onClick = onClick) {
+                Text(text = "Abrir conversor")
+            }
+        }
+    }
+}
+
+@Composable
 private fun PlannedFeatureCard(
     title: String,
     description: String,
@@ -206,6 +252,7 @@ private fun HomeScreenPreview() {
         HomeScreen(
             onOpenProtocols = {},
             onOpenAlerts = {},
+            onOpenCalculator = {},
         )
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import org.uciasistant.core.designsystem.UciAssistantTheme
 import org.uciasistant.feature.alerts.AlertsOverviewScreen
+import org.uciasistant.feature.calculators.UnitConverterScreen
 import org.uciasistant.feature.home.HomeScreen
 import org.uciasistant.feature.protocols.ProtocolLibraryScreen
 
@@ -21,6 +22,7 @@ private enum class Destination {
     Home,
     Protocols,
     Alerts,
+    UnitConverter,
 }
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +44,7 @@ class MainActivity : ComponentActivity() {
                         Destination.Home -> HomeScreen(
                             onOpenProtocols = { destination = Destination.Protocols },
                             onOpenAlerts = { destination = Destination.Alerts },
+                            onOpenCalculator = { destination = Destination.UnitConverter },
                         )
 
                         Destination.Protocols -> ProtocolLibraryScreen(
@@ -49,6 +52,10 @@ class MainActivity : ComponentActivity() {
                         )
 
                         Destination.Alerts -> AlertsOverviewScreen(
+                            onBack = { destination = Destination.Home },
+                        )
+
+                        Destination.UnitConverter -> UnitConverterScreen(
                             onBack = { destination = Destination.Home },
                         )
                     }
