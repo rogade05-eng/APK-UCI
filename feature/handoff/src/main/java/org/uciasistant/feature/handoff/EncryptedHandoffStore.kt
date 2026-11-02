@@ -267,12 +267,12 @@ internal class EncryptedHandoffStore(context: Context) {
         const val MAX_FIELD_CHARACTERS = 4_096
         const val MAX_TOTAL_CHARACTERS = 32_768
         const val MAX_RECORD_BYTES = 256 * 1024
+        const val MAGIC_BYTES = 4
         const val MIN_ENCRYPTED_BYTES = MAGIC_BYTES + 2 + MIN_IV_LENGTH + GCM_TAG_BYTES
         const val RECORDS_DIRECTORY = "encrypted-handoff-records-v1"
         const val RECORD_SUFFIX = ".enc"
         const val TEMP_SUFFIX = ".tmp"
         val MAGIC = byteArrayOf(0x55, 0x43, 0x49, 0x48) // UCIH
-        const val MAGIC_BYTES = 4
         val KEY_LOCK = Any()
     }
 }
