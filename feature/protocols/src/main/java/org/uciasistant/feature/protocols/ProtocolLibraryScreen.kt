@@ -434,6 +434,13 @@ private fun SourceReferenceCard(reference: ClinicalReference) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            reference.licenseNote?.let { license ->
+                Text(
+                    text = "Licencia: $license",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ internal data class ClinicalReference(
     val citation: String,
     val identifierLabel: String,
     val identifier: String,
+    val licenseNote: String? = null,
 )
 
 internal object PediatricClinicalReferenceCatalog {
@@ -19,6 +20,15 @@ internal object PediatricClinicalReferenceCatalog {
             citation = "Pediatric Critical Care Medicine, 2026",
             identifierLabel = "DOI",
             identifier = "10.1097/PCC.0000000000003927",
+        ),
+        ClinicalReference(
+            id = "who-etat-2016",
+            domain = "Urgencias pediátricas y triaje ETAT",
+            title = "Paediatric emergency triage, assessment and treatment: care of critically-ill children",
+            citation = "World Health Organization, Geneva, 2016; 74 p.",
+            identifierLabel = "ISBN",
+            identifier = "9789241510219",
+            licenseNote = "CC BY-NC-SA 3.0 IGO; atribución, uso no comercial y compartir adaptaciones bajo términos compatibles; uso comercial requiere permiso.",
         ),
         ClinicalReference(
             id = "palicc-2-2023",

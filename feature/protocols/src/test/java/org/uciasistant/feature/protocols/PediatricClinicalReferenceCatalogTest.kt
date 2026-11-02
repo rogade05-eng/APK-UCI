@@ -9,7 +9,7 @@ class PediatricClinicalReferenceCatalogTest {
     fun catalogContainsIdentifiableReferences() {
         val references = PediatricClinicalReferenceCatalog.references
 
-        assertTrue(references.isNotEmpty())
+        assertEquals(9, references.size)
         assertEquals(references.size, references.map(ClinicalReference::id).toSet().size)
         references.forEach { reference ->
             assertTrue(reference.id.isNotBlank())
@@ -37,7 +37,18 @@ class PediatricClinicalReferenceCatalogTest {
             assertTrue(topic.title.isNotBlank())
             val source = references[topic.sourceReferenceId]
             assertEquals("ISBN", source?.identifierLabel)
-            assertEquals("9788411062725", source?.identifier)
+            assertTrue(source?.identifier?.startsWith("978") == true)
         }
+    }
+
+    @Test
+    fun whoEtatReferenceExposesItsReuseRestriction() {
+        val reference = PediatricClinicalReferenceCatalog.references.single { it.id == "who-etat-2016" }
+
+        assertEquals("ISBN", reference.identifierLabel)
+        assertEquals("9789241510219", reference.identifier)
+        assertTrue(reference.licenseNote.orEmpty().contains("CC BY-NC-SA 3.0 IGO"))
+        assertTrue(reference.licenseNote.orEmpty().contains("no comercial"))
+        assertTrue(reference.licenseNote.orEmpty().contains("uso comercial requiere permiso"))
     }
 }

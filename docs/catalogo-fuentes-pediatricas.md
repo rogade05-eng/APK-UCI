@@ -9,6 +9,7 @@ El catálogo mostrado en `:feature:protocols` conserva títulos, dominio, cita y
 | Dominio | Referencia | Identificador | Estado editorial |
 |---|---|---|---|
 | Sepsis pediátrica | *Surviving Sepsis Campaign International Guidelines for the Management of Sepsis and Septic Shock in Children 2026*. Pediatric Critical Care Medicine, 2026. | DOI `10.1097/PCC.0000000000003927` | Candidata; derechos, adaptación a Cuba y aprobación institucional pendientes |
+| Urgencias pediátricas y ETAT | World Health Organization. [*Paediatric emergency triage, assessment and treatment: care of critically-ill children*](https://www.who.int/publications/i/item/9789241510219). Updated guideline. Geneva: WHO; 2016. 74 p. | ISBN `9789241510219` | Candidata; actualización selectiva, evidencia considerada hasta 2015; complementa ETAT 2005 y Pocket Book 2013. Licencia CC BY-NC-SA 3.0 IGO; confirmar compatibilidad de distribución |
 | SDRA pediátrico | Emeriaud G, López-Fernández YM, Iyer NP, et al. *Executive Summary of the Second International Guidelines for the Diagnosis and Management of Pediatric Acute Respiratory Distress Syndrome (PALICC-2)*. Pediatric Critical Care Medicine. 2023;24(2):143–168. | DOI `10.1097/PCC.0000000000003147` | Candidata; confirmar versión aplicable y derechos para cualquier adaptación |
 | Definición de sepsis pediátrica | Schlapbach LJ, et al. *International Consensus Criteria for Pediatric Sepsis and Septic Shock*. JAMA, 2024. | DOI `10.1001/jama.2024.0179` | Candidata; definición, no guía de cribado ni protocolo terapéutico |
 | Disfunción orgánica pediátrica | Sanchez-Pinto LN, et al. *Development and Validation of the Phoenix Criteria for Pediatric Sepsis and Septic Shock*. JAMA, 2024. | DOI `10.1001/jama.2024.0196` | Candidata; la app implementa la puntuación en un módulo separado, sin clasificación binaria automática |
@@ -20,6 +21,8 @@ El catálogo mostrado en `:feature:protocols` conserva títulos, dominio, cita y
 ## Procedencia y uso de BooksMedicos
 
 BooksMedicos.org se utilizó únicamente como pista para descubrir una referencia de urgencias pediátricas y su edición. La edición, título e ISBN se contrastaron con la ficha editorial de [Editorial Médica Panamericana](https://www.medicapanamericana.com/es-ES/libros/urgencias-pediatricas-guia-de-actuacion-3a-edicion). No se descargó, copió ni integró el libro, sus algoritmos, capítulos o procedimientos. La inclusión bibliográfica no otorga licencia para reproducirlo ni demuestra que sus recomendaciones sean apropiadas para Cuba.
+
+La guía ETAT de la OMS es una fuente distinta. La ficha oficial señala que la actualización de 2016 cubre recomendaciones seleccionadas y no reemplaza toda la guía ETAT ni el *Pocket Book*; la guía considera evidencia publicada hasta 2015. La política editorial de la [OMS](https://www.who.int/about/policies/publishing/copyright) indica CC BY-NC-SA 3.0 IGO para sus publicaciones: atribución, uso no comercial y compartir adaptaciones bajo términos compatibles; el uso comercial requiere permiso. Como la licencia y el modelo de distribución de UCI Assistant no están definidos, el catálogo incorpora únicamente cita, ISBN y nota de licencia: no se integran recomendaciones ni material clínico de ETAT.
 
 ## Temas de procedimiento visibles en el índice editorial
 
