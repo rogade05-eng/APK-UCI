@@ -109,7 +109,7 @@ jobs:
           api-level: 34
           target: aosp_atd
           arch: x86_64
-          emulator-boot-timeout: 300
+          emulator-boot-timeout: 600
           disable-animations: true
           script: |
             bash -o pipefail -c './gradlew --no-daemon :feature:protocols:connectedDebugAndroidTest :feature:handoff:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/android-test.log"'
