@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import java.security.KeyStore
 import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -58,6 +59,71 @@ class EncryptedObservationLedgerStoreTest {
             store.append(original, ClinicalPopulation.PEDIATRIC)
         }
         assertEquals(original, store.readById(original.id))
+    }
+
+    @Test
+    fun persistedLedgerCanBeReopenedAndVerified() = withStore { store, directory ->
+        val observation = observation()
+        store.append(observation, ClinicalPopulation.PEDIATRIC)
+
+        val reopenedStore = EncryptedObservationLedgerStore(context, directory.name)
+
+        assertEquals(observation, reopenedStore.readById(observation.id))
+        assertEquals(listOf(observation), reopenedStore.readEpisode(observation.episodeId, observation.population))
+    }
+
+    @Test
+    fun deletingAnInteriorRecordBreaksTheAuthenticatedChain() = withStore { store, directory ->
+        val observations = (1..3).map { index ->
+            observation(recordedAtMillis = 10_000L + index)
+        }
+        observations.forEach { store.append(it, ClinicalPopulation.PEDIATRIC) }
+
+        assertTrue(File(directory, "${observations[1].id}.enc").delete())
+
+        assertThrows(IOException::class.java) {
+            store.readEpisode(observations.first().episodeId, ClinicalPopulation.PEDIATRIC)
+        }
+    }
+
+    @Test
+    fun deletingTheLastRecordIsDetectedByTheAuthenticatedHead() = withStore { store, directory ->
+        val first = observation(recordedAtMillis = 10_000L)
+        val last = observation(recordedAtMillis = 20_000L)
+        store.append(first, ClinicalPopulation.PEDIATRIC)
+        store.append(last, ClinicalPopulation.PEDIATRIC)
+
+        assertTrue(File(directory, "${last.id}.enc").delete())
+
+        assertThrows(IOException::class.java) {
+            store.readById(first.id)
+        }
+    }
+
+    @Test
+    fun deletingAllLedgerFilesIsDetectedWhileKeystoreCheckpointKeyRemains() = withStore { store, directory ->
+        val observation = observation()
+        store.append(observation, ClinicalPopulation.PEDIATRIC)
+        directory.listFiles().orEmpty().forEach { file -> assertTrue(file.delete()) }
+
+        assertThrows(IOException::class.java) {
+            store.readEpisode(observation.episodeId, ClinicalPopulation.PEDIATRIC)
+        }
+    }
+
+    @Test
+    fun tamperingWithAuthenticatedHeadFailsClosed() = withStore { store, directory ->
+        val observation = observation()
+        store.append(observation, ClinicalPopulation.PEDIATRIC)
+
+        val head = File(directory, "ledger.head")
+        val tamperedBytes = head.readBytes()
+        tamperedBytes[tamperedBytes.lastIndex] = (tamperedBytes.last().toInt() xor 0x01).toByte()
+        head.writeBytes(tamperedBytes)
+
+        assertThrows(IOException::class.java) {
+            store.readById(observation.id)
+        }
     }
 
     @Test
@@ -164,6 +230,12 @@ class EncryptedObservationLedgerStoreTest {
             block(EncryptedObservationLedgerStore(context, directoryName), directory)
         } finally {
             directory.deleteRecursively()
+            runCatching {
+                KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.also { keyStore ->
+                    keyStore.deleteEntry("uci_assistant_observation_ledger_v2-$directoryName")
+                    keyStore.deleteEntry("uci_assistant_observation_integrity_v2-$directoryName")
+                }
+            }
         }
     }
 
