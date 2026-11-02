@@ -57,6 +57,7 @@ fun ProtocolLibraryScreen(onBack: () -> Unit) {
     var isImporting by remember { mutableStateOf(false) }
     var showRequirements by remember { mutableStateOf(false) }
     var showReferenceCatalog by remember { mutableStateOf(false) }
+    var showProcedureTopicCatalog by remember { mutableStateOf(false) }
     var fileError by remember { mutableStateOf<String?>(null) }
     var activeDocument by remember { mutableStateOf<PendingProtocolDocument?>(null) }
 
@@ -139,6 +140,11 @@ fun ProtocolLibraryScreen(onBack: () -> Unit) {
                 ReferenceCatalogCard(
                     expanded = showReferenceCatalog,
                     onToggle = { showReferenceCatalog = !showReferenceCatalog },
+                )
+
+                ProcedureTopicCatalogCard(
+                    expanded = showProcedureTopicCatalog,
+                    onToggle = { showProcedureTopicCatalog = !showProcedureTopicCatalog },
                 )
 
                 DocumentPickerCard(
@@ -298,6 +304,90 @@ private fun ReferenceCatalogCard(
                 references.forEach { reference ->
                     SourceReferenceCard(reference)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProcedureTopicCatalogCard(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val topics = PediatricProcedureTopicCatalog.topics
+    val references = PediatricClinicalReferenceCatalog.references.associateBy(ClinicalReference::id)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Temas de procedimientos pediátricos · ${topics.size}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Temas identificados en el índice editorial de una fuente candidata. No incluye pasos, criterios ni instrucciones clínicas; no son procedimientos aprobados.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onToggle) {
+                Text(if (expanded) "Ocultar temas" else "Mostrar temas candidatos")
+            }
+            if (expanded) {
+                topics.forEach { topic ->
+                    ProcedureTopicCard(
+                        topic = topic,
+                        source = references[topic.sourceReferenceId],
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProcedureTopicCard(
+    topic: PediatricProcedureTopic,
+    source: ClinicalReference?,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                text = "TEMA DE ÍNDICE · NO ES UNA GUÍA DE PROCEDIMIENTO",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = topic.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (source == null) {
+                Text(
+                    text = "Referencia bibliográfica no disponible.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            } else {
+                Text(text = source.citation, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    text = "${source.identifierLabel}: ${source.identifier}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

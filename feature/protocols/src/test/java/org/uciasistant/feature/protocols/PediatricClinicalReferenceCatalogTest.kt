@@ -25,4 +25,19 @@ class PediatricClinicalReferenceCatalogTest {
             }
         }
     }
+
+    @Test
+    fun procedureTopicsTraceToTheEditorialReference() {
+        val references = PediatricClinicalReferenceCatalog.references.associateBy(ClinicalReference::id)
+        val topics = PediatricProcedureTopicCatalog.topics
+
+        assertTrue(topics.isNotEmpty())
+        assertEquals(topics.size, topics.map(PediatricProcedureTopic::id).toSet().size)
+        topics.forEach { topic ->
+            assertTrue(topic.title.isNotBlank())
+            val source = references[topic.sourceReferenceId]
+            assertEquals("ISBN", source?.identifierLabel)
+            assertEquals("9788411062725", source?.identifier)
+        }
+    }
 }

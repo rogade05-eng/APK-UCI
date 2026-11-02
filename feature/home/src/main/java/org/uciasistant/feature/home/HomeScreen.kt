@@ -102,7 +102,7 @@ fun HomeScreen(
             SectionHeading(text = "FUNCIONES CLÍNICAS EN DEFINICIÓN")
             PlannedFeatureCard(
                 title = "Protocolos de consulta",
-                description = "Índice bibliográfico candidato y bandeja cifrada de PDF pendientes; no hay protocolos clínicos aprobados.",
+                description = "Índice bibliográfico y temas de procedimiento candidatos; PDF cifrados pendientes de revisión. No hay instrucciones clínicas ni protocolos aprobados.",
                 onClick = onOpenProtocols,
             )
             PlannedFeatureCard(

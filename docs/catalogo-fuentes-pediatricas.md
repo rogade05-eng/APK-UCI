@@ -2,7 +2,7 @@
 
 **Estado:** metadatos de fuentes candidatas; no es una biblioteca de protocolos ni una aprobación clínica.
 
-El catálogo mostrado en `:feature:protocols` conserva títulos, dominio, cita y DOI o ISBN para orientar futuras revisiones. No incluye textos completos, resúmenes terapéuticos, tablas, puntos de corte ni algoritmos. Ninguna referencia se presenta como protocolo institucional o como recomendación aprobada.
+El catálogo mostrado en `:feature:protocols` conserva títulos, dominio, cita y DOI o ISBN para orientar futuras revisiones, además de un índice separado de temas procedimentales candidatos. No incluye textos completos, resúmenes terapéuticos, tablas, puntos de corte ni algoritmos. Ninguna referencia se presenta como protocolo institucional o como recomendación aprobada.
 
 ## Referencias candidatas incluidas
 
@@ -23,7 +23,7 @@ BooksMedicos.org se utilizó únicamente como pista para descubrir una referenci
 
 ## Temas de procedimiento visibles en el índice editorial
 
-La ficha oficial de la editorial incluye, entre otros, los títulos “Punción intraósea”, “Punción lumbar”, “Triage”, “Organización del traslado y estabilización prehospitalaria del paciente pediátrico” y “Ventilación con bolsa y mascarilla”, además de un tema de intubación de secuencia rápida. Se registran solo como **candidatos temáticos** para priorizar investigación; aquí no se transcriben ni implementan sus pasos, criterios o algoritmos. Cada tema deberá contrastarse con una fuente primaria vigente, derechos de adaptación y contexto institucional antes de desarrollar contenido clínico.
+La ficha oficial de la editorial incluye los títulos “Acceso venoso periférico”, “Punción intraósea”, “Punción lumbar”, “Triage”, “Organización del traslado y estabilización prehospitalaria del paciente pediátrico”, “Ventilación con bolsa y mascarilla” y “Transporte intrahospitalario del paciente crítico”, además de un tema de intubación de secuencia rápida. El catálogo local registra esos ocho temas solo como **candidatos** para priorizar investigación; aquí no se transcriben ni implementan sus pasos, criterios o algoritmos. Cada tema deberá contrastarse con una fuente primaria vigente, derechos de adaptación y contexto institucional antes de desarrollar contenido clínico.
 
 ## Condiciones antes de publicar contenido
 
