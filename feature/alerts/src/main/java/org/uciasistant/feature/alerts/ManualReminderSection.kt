@@ -301,7 +301,7 @@ private fun showDateTimePicker(context: Context, initialMillis: Long, onSelected
                 },
                 selected.get(Calendar.HOUR_OF_DAY),
                 selected.get(Calendar.MINUTE),
-                DateFormat.is24HourFormat(context),
+                android.text.format.DateFormat.is24HourFormat(context),
             ).show()
         },
         initial.get(Calendar.YEAR),
