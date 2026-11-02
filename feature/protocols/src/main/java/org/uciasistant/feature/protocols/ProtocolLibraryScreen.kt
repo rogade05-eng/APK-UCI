@@ -56,6 +56,7 @@ fun ProtocolLibraryScreen(onBack: () -> Unit) {
     var isLoadingDocuments by remember { mutableStateOf(true) }
     var isImporting by remember { mutableStateOf(false) }
     var showRequirements by remember { mutableStateOf(false) }
+    var showReferenceCatalog by remember { mutableStateOf(false) }
     var fileError by remember { mutableStateOf<String?>(null) }
     var activeDocument by remember { mutableStateOf<PendingProtocolDocument?>(null) }
 
@@ -134,6 +135,11 @@ fun ProtocolLibraryScreen(onBack: () -> Unit) {
                 PrototypeNotice(modifier = Modifier.fillMaxWidth())
 
                 LibrarySummaryCard(documentCount = documents.size)
+
+                ReferenceCatalogCard(
+                    expanded = showReferenceCatalog,
+                    onToggle = { showReferenceCatalog = !showReferenceCatalog },
+                )
 
                 DocumentPickerCard(
                     documents = documents,
@@ -254,6 +260,80 @@ private fun LibrarySummaryCard(documentCount: Int) {
                     "$documentCount ${if (documentCount == 1) "documento" else "documentos"} pendiente(s) de revisión; no están publicados."
                 },
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReferenceCatalogCard(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val references = PediatricClinicalReferenceCatalog.references
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Fuentes pediátricas candidatas · ${references.size}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Índice bibliográfico offline. No contiene protocolos, recomendaciones ni algoritmos; derechos, vigencia, aplicabilidad local y aprobación editorial siguen pendientes.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onToggle) {
+                Text(if (expanded) "Ocultar referencias" else "Mostrar referencias")
+            }
+            if (expanded) {
+                references.forEach { reference ->
+                    SourceReferenceCard(reference)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceReferenceCard(reference: ClinicalReference) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                text = "REFERENCIA · NO PROTOCOLO APROBADO",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = reference.domain,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = reference.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(text = reference.citation, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "DOI: ${reference.doi}",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
