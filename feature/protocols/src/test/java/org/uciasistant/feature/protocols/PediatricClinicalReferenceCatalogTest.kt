@@ -1,5 +1,6 @@
 package org.uciasistant.feature.protocols
 
+import org.uciasistant.core.clinicaldata.ClinicalPopulation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -27,18 +28,26 @@ class PediatricClinicalReferenceCatalogTest {
     }
 
     @Test
-    fun procedureTopicsTraceToTheEditorialReference() {
+    fun procedureTopicsTraceToPopulationScopedCandidateReferences() {
         val references = PediatricClinicalReferenceCatalog.references.associateBy(ClinicalReference::id)
         val topics = PediatricProcedureTopicCatalog.topics
 
-        assertTrue(topics.isNotEmpty())
+        assertEquals(8, topics.size)
         assertEquals(topics.size, topics.map(PediatricProcedureTopic::id).toSet().size)
         topics.forEach { topic ->
             assertTrue(topic.title.isNotBlank())
-            val source = references[topic.sourceReferenceId]
-            assertEquals("ISBN", source?.identifierLabel)
-            assertTrue(source?.identifier?.startsWith("978") == true)
+            assertEquals(ClinicalPopulation.PEDIATRIC, topic.population)
+            assertTrue(topic.sourceReferenceIds.isNotEmpty())
+            topic.sourceReferenceIds.forEach { sourceId ->
+                val source = references[sourceId]
+                assertEquals("ISBN", source?.identifierLabel)
+                assertTrue(source?.identifier?.startsWith("978") == true)
+            }
         }
+
+        val triage = topics.single { it.id == "triage" }
+        assertTrue(triage.sourceReferenceIds.contains("urgencias-pediatricas-2024"))
+        assertTrue(triage.sourceReferenceIds.contains("who-etat-2016"))
     }
 
     @Test

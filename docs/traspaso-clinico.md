@@ -12,7 +12,7 @@ La eliminación es manual y borra el archivo de la app; no garantiza la sobreesc
 
 ## Límites funcionales
 
-Los campos de fecha/hora son texto libre: no se interpretan ni validan formato, zona horaria, autoría o secuencia. Prioridad, motivo y referencia institucional tampoco se evalúan. No se seleccionan destino, admisión o urgencia; no se crean recomendaciones ni notificaciones. No hay datos demográficos, órdenes, administración de medicamentos, evolución clínica general, interoperabilidad ni expediente longitudinal.
+Los campos de fecha/hora son texto libre: no se interpretan ni validan formato, zona horaria, autoría o secuencia. Prioridad, motivo y referencia institucional tampoco se evalúan. No se seleccionan destino, admisión o urgencia; no se crean recomendaciones ni notificaciones. Existe un modelo separado de procedencia de observaciones en `:core:clinicaldata`, pero aún no está conectado al traspaso ni tiene almacenamiento. No hay datos demográficos, órdenes, administración de medicamentos, evolución clínica general, interoperabilidad ni expediente longitudinal.
 
 La clave no requiere autenticación del usuario. Quien tenga acceso al dispositivo desbloqueado y a la app puede abrir los borradores; por ello, a pesar del cifrado y `FLAG_SECURE`, el prototipo **prohíbe datos reales de pacientes** hasta añadir autenticación/autorización, roles, auditoría, retención y aprobación institucional. `FLAG_SECURE` no evita una fotografía externa, observación directa ni todas las exposiciones por teclado/sistema operativo. El comportamiento de copias de seguridad debe verificarse en dispositivos/versiones destino antes de cualquier uso real.
 

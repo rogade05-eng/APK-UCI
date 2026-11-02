@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 rootProject.name = "UciAssistant"
 include(":app")
 include(":core:designsystem")
+include(":core:clinicaldata")
 include(":feature:home")
 include(":feature:protocols")
 include(":feature:alerts")

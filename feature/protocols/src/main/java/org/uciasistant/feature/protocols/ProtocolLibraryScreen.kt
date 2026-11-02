@@ -339,7 +339,7 @@ private fun ProcedureTopicCatalogCard(
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Temas identificados en el índice editorial de una fuente candidata. No incluye pasos, criterios ni instrucciones clínicas; no son procedimientos aprobados.",
+                text = "Temas identificados en el índice editorial de una fuente candidata; las referencias adicionales se muestran por separado. No incluye pasos, criterios ni instrucciones clínicas; no son procedimientos aprobados.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -348,9 +348,11 @@ private fun ProcedureTopicCatalogCard(
             }
             if (expanded) {
                 topics.forEach { topic ->
+                    val sources = topic.sourceReferenceIds.mapNotNull(references::get)
                     ProcedureTopicCard(
                         topic = topic,
-                        source = references[topic.sourceReferenceId],
+                        sources = sources,
+                        hasMissingSources = sources.size != topic.sourceReferenceIds.size,
                     )
                 }
             }
@@ -361,7 +363,8 @@ private fun ProcedureTopicCatalogCard(
 @Composable
 private fun ProcedureTopicCard(
     topic: PediatricProcedureTopic,
-    source: ClinicalReference?,
+    sources: List<ClinicalReference>,
+    hasMissingSources: Boolean,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -383,19 +386,38 @@ private fun ProcedureTopicCard(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
-            if (source == null) {
+            if (hasMissingSources || sources.isEmpty()) {
                 Text(
-                    text = "Referencia bibliográfica no disponible.",
+                    text = "Una o más referencias bibliográficas no están disponibles.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
-            } else {
+            }
+            sources.forEachIndexed { index, source ->
+                Text(
+                    text = "FUENTE CANDIDATA ${index + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = source.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
                 Text(text = source.citation, style = MaterialTheme.typography.bodySmall)
                 Text(
                     text = "${source.identifierLabel}: ${source.identifier}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                source.licenseNote?.let { license ->
+                    Text(
+                        text = "Licencia: $license",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

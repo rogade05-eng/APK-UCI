@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon :feature:alerts:testDebugUnitTest :feature:calculators:testDebugUnitTest :feature:handoff:testDebugUnitTest :feature:protocols:testDebugUnitTest :app:assembleDebug 2>&1 | tee "$RUNNER_TEMP/gradle-assemble.log"
+          ./gradlew --no-daemon :core:clinicaldata:testDebugUnitTest :feature:alerts:testDebugUnitTest :feature:calculators:testDebugUnitTest :feature:handoff:testDebugUnitTest :feature:protocols:testDebugUnitTest :app:assembleDebug 2>&1 | tee "$RUNNER_TEMP/gradle-assemble.log"
 
       - name: Report Gradle diagnostics
         if: failure()
