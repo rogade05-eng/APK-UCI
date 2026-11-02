@@ -1,5 +1,6 @@
 package org.uciasistant.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -11,11 +12,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import org.uciasistant.core.designsystem.UciAssistantTheme
 import org.uciasistant.feature.alerts.AlertsOverviewScreen
+import org.uciasistant.feature.alerts.EXTRA_OPEN_ALERTS
 import org.uciasistant.feature.calculators.CalculatorsHomeScreen
 import org.uciasistant.feature.home.HomeScreen
 import org.uciasistant.feature.handoff.HandoffScreen
@@ -30,14 +31,19 @@ private enum class Destination {
 }
 
 class MainActivity : ComponentActivity() {
+    private var destination by mutableStateOf(Destination.Home)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        destination = if (intent.getBooleanExtra(EXTRA_OPEN_ALERTS, false)) {
+            Destination.Alerts
+        } else {
+            Destination.Home
+        }
         setContent {
             UciAssistantTheme {
-                var destination by remember { mutableStateOf(Destination.Home) }
-
                 SideEffect {
-                    if (destination == Destination.Handoff) {
+                    if (destination == Destination.Handoff || destination == Destination.Alerts) {
                         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     } else {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -78,6 +84,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_ALERTS, false)) {
+            destination = Destination.Alerts
         }
     }
 }

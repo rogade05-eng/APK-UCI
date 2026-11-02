@@ -98,6 +98,12 @@ fun HomeScreen(
                 actionLabel = "Abrir borradores",
                 onClick = onOpenHandoff,
             )
+            AvailableFeatureCard(
+                title = "Recordatorios manuales",
+                description = "Avisos generales, de una sola vez y locales. No son alertas clínicas; Android puede retrasarlos u omitirlos.",
+                actionLabel = "Abrir recordatorios",
+                onClick = onOpenAlerts,
+            )
 
             SectionHeading(text = "FUNCIONES CLÍNICAS EN DEFINICIÓN")
             PlannedFeatureCard(
@@ -107,7 +113,7 @@ fun HomeScreen(
             )
             PlannedFeatureCard(
                 title = "Alertas individualizadas",
-                description = "Se prevé enlazarlas con un protocolo aprobado para consulta. No hay criterios ni alertas activas.",
+                description = "El motor clínico sigue inactivo: faltan criterios y correspondencia con protocolos aprobados. Los recordatorios manuales disponibles no son alertas clínicas.",
                 onClick = onOpenAlerts,
             )
 

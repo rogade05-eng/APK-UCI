@@ -50,7 +50,7 @@ fun AlertsOverviewScreen(onBack: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Módulo separado de la biblioteca de protocolos.",
+                    text = "Las alertas clínicas siguen inactivas; los recordatorios manuales son una función general independiente.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -60,9 +60,11 @@ fun AlertsOverviewScreen(onBack: () -> Unit) {
 
             AlertsSummaryCard()
 
+            ManualReminderSection()
+
             InfoCard(
-                title = "No se evalúan pacientes",
-                description = "No hay reglas, activadores, cálculos ni umbrales implementados. La aplicación no recibe ni procesa datos de pacientes y no genera notificaciones clínicas.",
+                title = "Sin reglas clínicas ni evaluación de pacientes",
+                description = "No hay criterios, activadores, cálculos ni umbrales implementados; UCI Assistant no recibe ni procesa datos de pacientes y no genera alertas clínicas. Los recordatorios manuales no evalúan información clínica.",
             )
 
             TextButton(onClick = { showRequirements = !showRequirements }) {
@@ -85,7 +87,7 @@ fun AlertsOverviewScreen(onBack: () -> Unit) {
                     RequirementCard(
                         number = "02",
                         title = "Especificar los datos de entrada",
-                        description = "Definir qué información autorizada usaría cada alerta, su origen, actualización y controles de calidad. No se solicitan datos en esta versión.",
+                        description = "Definir qué información autorizada usaría cada alerta clínica, su origen, actualización y controles de calidad. Los recordatorios manuales no usan ni solicitan datos clínicos.",
                     )
                     RequirementCard(
                         number = "03",
@@ -111,7 +113,7 @@ fun AlertsOverviewScreen(onBack: () -> Unit) {
             )
 
             Text(
-                text = "Sin alertas activas · Sin datos de pacientes · Sin automatización clínica",
+                text = "Sin alertas clínicas activas · Recordatorios manuales no urgentes · Sin automatización clínica",
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -139,14 +141,14 @@ private fun AlertsSummaryCard() {
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
                 Text(
-                    text = "MÓDULO NO ACTIVO",
+                    text = "ALERTAS CLÍNICAS INACTIVAS",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                 )
             }
             Text(
-                text = "0 alertas activas",
+                text = "0 alertas clínicas activas",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
             )
