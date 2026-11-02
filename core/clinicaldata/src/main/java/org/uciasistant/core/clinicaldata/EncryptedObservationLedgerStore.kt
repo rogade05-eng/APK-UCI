@@ -33,6 +33,8 @@ internal class EncryptedObservationLedgerStore(
     private val recordsDirectory: File
     private val encryptionKeyAlias: String
     private val integrityKeyAlias: String
+    private val anchorMarkerAliasPrefix: String
+    private val anchorSentinelAlias: String
 
     init {
         require(storageDirectoryName.matches(STORAGE_DIRECTORY_NAME_PATTERN)) {
@@ -44,6 +46,8 @@ internal class EncryptedObservationLedgerStore(
         recordsDirectory = File(appContext.filesDir, storageDirectoryName)
         encryptionKeyAlias = "$ENCRYPTION_KEY_ALIAS_PREFIX-$keyAliasSuffix"
         integrityKeyAlias = "$INTEGRITY_KEY_ALIAS_PREFIX-$keyAliasSuffix"
+        anchorMarkerAliasPrefix = "$ANCHOR_MARKER_ALIAS_PREFIX-$keyAliasSuffix-"
+        anchorSentinelAlias = "$ANCHOR_SENTINEL_ALIAS_PREFIX-$keyAliasSuffix"
     }
 
     fun append(record: ClinicalObservationRecord, expectedPopulation: ClinicalPopulation) {
@@ -84,6 +88,7 @@ internal class EncryptedObservationLedgerStore(
                     fileDigest = fileDigest,
                 ),
             )
+            ensureMonotonicAnchor(sequence)
         }
     }
 
@@ -105,10 +110,12 @@ internal class EncryptedObservationLedgerStore(
     private fun readAllEntries(): List<LedgerEntry> {
         val encryptionKeyExists = keyExists(encryptionKeyAlias)
         val integrityKeyExists = keyExists(integrityKeyAlias)
+        val anchorState = readAnchorState()
         if (!recordsDirectory.exists()) {
-            if (encryptionKeyExists || integrityKeyExists) {
-                throw IOException("Falta el directorio de un ledger previamente inicializado.")
+            if (anchorState.hasSentinel || anchorState.markerSequences.isNotEmpty()) {
+                throw IOException("Falta el ledger asociado al ancla de Android Keystore.")
             }
+            if (encryptionKeyExists || integrityKeyExists) clearUncommittedLedgerKeys()
             return emptyList()
         }
         if (!recordsDirectory.isDirectory) {
@@ -118,9 +125,12 @@ internal class EncryptedObservationLedgerStore(
         val files = recordsDirectory.listFiles { file -> file.name.endsWith(RECORD_SUFFIX) }
             ?: throw IOException("No se pudo enumerar el libro local cifrado.")
         if (files.isEmpty()) {
-            if (headFile().exists() || encryptionKeyExists || integrityKeyExists) {
+            if (headFile().exists() || anchorState.hasSentinel || anchorState.markerSequences.isNotEmpty()) {
                 throw IOException("El checkpoint autenticado indica que faltan registros del ledger.")
             }
+            if (encryptionKeyExists || integrityKeyExists) clearUncommittedLedgerKeys()
+            recordsDirectory.listFiles { file -> file.name.endsWith(TEMP_SUFFIX) }
+                ?.forEach { it.delete() }
             return emptyList()
         }
 
@@ -162,13 +172,28 @@ internal class EncryptedObservationLedgerStore(
         }
 
         val lastEntry = entries.last()
-        val head = readAuthenticatedHead()
-        if (head.sequence != lastEntry.sequence ||
-            head.observationId != lastEntry.record.id ||
-            !MessageDigest.isEqual(head.fileDigest, lastEntry.fileDigest)
-        ) {
-            throw IOException("El checkpoint autenticado no coincide con el final del ledger.")
+        if (anchorState.latestSequence > lastEntry.sequence) {
+            throw IOException("El estado del ledger es anterior al ancla persistida en Android Keystore.")
         }
+        val currentHead = if (headFile().exists()) readAuthenticatedHead() else null
+        if (currentHead != null) {
+            if (currentHead.sequence > lastEntry.sequence) {
+                throw IOException("El checkpoint apunta a registros que ya no están presentes.")
+            }
+            val headEntry = entries[currentHead.sequence.toInt() - 1]
+            if (currentHead.observationId != headEntry.record.id ||
+                !MessageDigest.isEqual(currentHead.fileDigest, headEntry.fileDigest)
+            ) {
+                throw IOException("El checkpoint autenticado no coincide con la cadena del ledger.")
+            }
+        }
+
+        if (currentHead == null || currentHead.sequence < lastEntry.sequence) {
+            writeAuthenticatedHead(
+                LedgerHead(lastEntry.sequence, lastEntry.record.id, lastEntry.fileDigest),
+            )
+        }
+        ensureMonotonicAnchor(lastEntry.sequence, anchorState)
         return entries
     }
 
@@ -478,6 +503,83 @@ internal class EncryptedObservationLedgerStore(
         throw IOException("No se pudo comprobar el estado de las claves del ledger.", error)
     }
 
+    /** Reads the Keystore-side commit marker, which is separate from app-private ledger files. */
+    private fun readAnchorState(): AnchorState = try {
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        val aliases = buildList {
+            val enumeration = keyStore.aliases()
+            while (enumeration.hasMoreElements()) add(enumeration.nextElement())
+        }
+        val markerSequences = aliases.asSequence()
+            .filter { it.startsWith(anchorMarkerAliasPrefix) }
+            .map { alias ->
+                val suffix = alias.removePrefix(anchorMarkerAliasPrefix)
+                if (!suffix.matches(ANCHOR_SEQUENCE_PATTERN)) {
+                    throw IOException("Alias de ancla de ledger no válido.")
+                }
+                suffix.toLongOrNull()?.takeIf { it > 0L }
+                    ?: throw IOException("Secuencia de ancla de ledger no válida.")
+            }
+            .toList()
+        val hasSentinel = keyStore.containsAlias(anchorSentinelAlias)
+        AnchorState(hasSentinel, markerSequences)
+    } catch (error: Exception) {
+        throw if (error is IOException) error else IOException(
+            "No se pudo leer el ancla monotónica de Android Keystore.",
+            error,
+        )
+    }
+
+    private fun ensureMonotonicAnchor(sequence: Long, state: AnchorState = readAnchorState()) {
+        if (state.latestSequence > sequence) {
+            throw IOException("El ledger está por detrás del ancla persistida en Android Keystore.")
+        }
+        if (state.hasSentinel && state.markerSequences.isEmpty()) {
+            throw IOException("Falta el marcador monotónico del ledger.")
+        }
+
+        if (state.latestSequence < sequence) createAnchorKey(anchorMarkerAlias(sequence))
+        if (!state.hasSentinel) createAnchorKey(anchorSentinelAlias)
+
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        readAnchorState().markerSequences
+            .filter { it < sequence }
+            .forEach { oldSequence -> keyStore.deleteEntry(anchorMarkerAlias(oldSequence)) }
+        val committed = readAnchorState()
+        if (!committed.hasSentinel || committed.latestSequence != sequence) {
+            throw IOException("No se pudo confirmar la secuencia del ledger en Android Keystore.")
+        }
+    }
+
+    private fun createAnchorKey(alias: String) {
+        getOrCreateKey(
+            alias = alias,
+            algorithm = KeyProperties.KEY_ALGORITHM_HMAC_SHA256,
+        ) { keyAlias ->
+            KeyGenParameterSpec.Builder(
+                keyAlias,
+                KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY,
+            )
+                .setDigests(KeyProperties.DIGEST_SHA256)
+                .setKeySize(HMAC_KEY_SIZE_BITS)
+                .setUserAuthenticationRequired(false)
+                .build()
+        }
+    }
+
+    private fun anchorMarkerAlias(sequence: Long): String =
+        "$anchorMarkerAliasPrefix${sequence.toString().padStart(ANCHOR_SEQUENCE_DIGITS, '0')}"
+
+    private fun clearUncommittedLedgerKeys() {
+        try {
+            val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+            keyStore.deleteEntry(encryptionKeyAlias)
+            keyStore.deleteEntry(integrityKeyAlias)
+        } catch (error: Exception) {
+            throw IOException("No se pudieron limpiar claves de un append interrumpido sin registros.", error)
+        }
+    }
+
     private fun calculateHmac(payload: ByteArray, key: SecretKey): ByteArray =
         Mac.getInstance(HMAC_TRANSFORMATION).run {
             init(key)
@@ -568,10 +670,20 @@ internal class EncryptedObservationLedgerStore(
         val fileDigest: ByteArray,
     )
 
+    private data class AnchorState(
+        val hasSentinel: Boolean,
+        val markerSequences: List<Long>,
+    ) {
+        val latestSequence: Long get() = markerSequences.maxOrNull() ?: 0L
+    }
+
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
         const val ENCRYPTION_KEY_ALIAS_PREFIX = "uci_assistant_observation_ledger_v2"
         const val INTEGRITY_KEY_ALIAS_PREFIX = "uci_assistant_observation_integrity_v2"
+        const val ANCHOR_MARKER_ALIAS_PREFIX = "uci_obs_anchor_commit_v2"
+        const val ANCHOR_SENTINEL_ALIAS_PREFIX = "uci_obs_anchor_root_v2"
+        const val ANCHOR_SEQUENCE_DIGITS = 20
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val HMAC_TRANSFORMATION = "HmacSHA256"
         const val SHA256_TRANSFORMATION = "SHA-256"
@@ -602,6 +714,7 @@ internal class EncryptedObservationLedgerStore(
         val EMPTY_CHAIN_DIGEST = ByteArray(SHA256_BYTES)
         val STORAGE_DIRECTORY_NAME_PATTERN = Regex("[A-Za-z0-9._-]{1,100}")
         val KEY_ALIAS_SUFFIX_PATTERN = Regex("[A-Za-z0-9._-]{1,100}")
+        val ANCHOR_SEQUENCE_PATTERN = Regex("[0-9]{$ANCHOR_SEQUENCE_DIGITS}")
         val KEY_LOCK = Any()
         val STORE_LOCK = Any()
     }

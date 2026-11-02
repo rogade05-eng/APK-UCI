@@ -62,6 +62,48 @@ class EncryptedObservationLedgerStoreTest {
     }
 
     @Test
+    fun staleCheckpointIsRecoveredFromTheCompleteAuthenticatedChain() = withStore { store, directory ->
+        val first = observation(recordedAtMillis = 10_000L)
+        val second = observation(recordedAtMillis = 20_000L)
+        store.append(first, ClinicalPopulation.PEDIATRIC)
+        val earlierHead = File(directory, "ledger.head").readBytes()
+        store.append(second, ClinicalPopulation.PEDIATRIC)
+        File(directory, "ledger.head").writeBytes(earlierHead)
+
+        assertEquals(
+            listOf(first, second),
+            store.readEpisode(first.episodeId, ClinicalPopulation.PEDIATRIC),
+        )
+        assertFalse(File(directory, "ledger.head").readBytes().contentEquals(earlierHead))
+    }
+
+    @Test
+    fun missingCheckpointIsRecoveredWhenEveryChainedRecordIsPresent() = withStore { store, directory ->
+        val observation = observation()
+        store.append(observation, ClinicalPopulation.PEDIATRIC)
+        assertTrue(File(directory, "ledger.head").delete())
+
+        assertEquals(listOf(observation), store.readEpisode(observation.episodeId, observation.population))
+        assertTrue(File(directory, "ledger.head").isFile)
+    }
+
+    @Test
+    fun restoringAnOlderFileSnapshotIsDetectedByTheKeystoreAnchor() = withStore { store, directory ->
+        val first = observation(recordedAtMillis = 10_000L)
+        store.append(first, ClinicalPopulation.PEDIATRIC)
+        val olderSnapshot = directory.listFiles().orEmpty().associate { it.name to it.readBytes() }
+        val second = observation(recordedAtMillis = 20_000L)
+        store.append(second, ClinicalPopulation.PEDIATRIC)
+
+        directory.listFiles().orEmpty().forEach { file -> assertTrue(file.delete()) }
+        olderSnapshot.forEach { (name, bytes) -> File(directory, name).writeBytes(bytes) }
+
+        assertThrows(IOException::class.java) {
+            store.readEpisode(first.episodeId, ClinicalPopulation.PEDIATRIC)
+        }
+    }
+
+    @Test
     fun persistedLedgerCanBeReopenedAndVerified() = withStore { store, directory ->
         val observation = observation()
         store.append(observation, ClinicalPopulation.PEDIATRIC)
@@ -234,6 +276,12 @@ class EncryptedObservationLedgerStoreTest {
                 KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.also { keyStore ->
                     keyStore.deleteEntry("uci_assistant_observation_ledger_v2-$directoryName")
                     keyStore.deleteEntry("uci_assistant_observation_integrity_v2-$directoryName")
+                    keyStore.deleteEntry("uci_obs_anchor_root_v2-$directoryName")
+                    val aliases = mutableListOf<String>()
+                    val enumeration = keyStore.aliases()
+                    while (enumeration.hasMoreElements()) aliases += enumeration.nextElement()
+                    aliases.filter { it.startsWith("uci_obs_anchor_commit_v2-$directoryName-") }
+                        .forEach(keyStore::deleteEntry)
                 }
             }
         }
