@@ -594,14 +594,14 @@ internal class EncryptedObservationLedgerStore(
         const val RECORD_SUFFIX = ".enc"
         const val TEMP_SUFFIX = ".tmp"
         const val HEAD_FILE_NAME = "ledger.head"
+        val MAGIC = byteArrayOf(0x55, 0x43, 0x49, 0x4f) // UCIO
+        val HEAD_MAGIC = byteArrayOf(0x55, 0x43, 0x49, 0x48) // UCIH
         val MIN_ENCRYPTED_FILE_BYTES = MAGIC.size + 2 + MIN_IV_LENGTH + GCM_TAG_BYTES
         val MAX_ENCRYPTED_FILE_BYTES = MAGIC.size + 2 + MAX_IV_LENGTH + MAX_CIPHERTEXT_BYTES
         val MIN_HEAD_FILE_BYTES = HEAD_MAGIC.size + 4 + 8 + 2 + 36 + 4 + SHA256_BYTES + HMAC_BYTES
         val EMPTY_CHAIN_DIGEST = ByteArray(SHA256_BYTES)
         val STORAGE_DIRECTORY_NAME_PATTERN = Regex("[A-Za-z0-9._-]{1,100}")
         val KEY_ALIAS_SUFFIX_PATTERN = Regex("[A-Za-z0-9._-]{1,100}")
-        val MAGIC = byteArrayOf(0x55, 0x43, 0x49, 0x4f) // UCIO
-        val HEAD_MAGIC = byteArrayOf(0x55, 0x43, 0x49, 0x48) // UCIH
         val KEY_LOCK = Any()
         val STORE_LOCK = Any()
     }
