@@ -15,6 +15,7 @@ class PediatricClinicalReferenceCatalogTest {
         references.forEach { reference ->
             assertTrue(reference.id.isNotBlank())
             assertTrue(reference.domain.isNotBlank())
+            assertEquals(ClinicalPopulation.PEDIATRIC, reference.population)
             assertTrue(reference.title.isNotBlank())
             assertTrue(reference.citation.isNotBlank())
             assertTrue(reference.identifierLabel in setOf("DOI", "ISBN"))
@@ -59,5 +60,14 @@ class PediatricClinicalReferenceCatalogTest {
         assertTrue(reference.licenseNote.orEmpty().contains("CC BY-NC-SA 3.0 IGO"))
         assertTrue(reference.licenseNote.orEmpty().contains("no comercial"))
         assertTrue(reference.licenseNote.orEmpty().contains("uso comercial requiere permiso"))
+        assertEquals(
+            ReferenceRightsReviewStatus.LICENSE_IDENTIFIED_COMPATIBILITY_PENDING,
+            reference.rightsReviewStatus,
+        )
+        assertTrue(
+            PediatricClinicalReferenceCatalog.references
+                .filterNot { it.id == reference.id }
+                .all { it.rightsReviewStatus == ReferenceRightsReviewStatus.NOT_ASSESSED },
+        )
     }
 }

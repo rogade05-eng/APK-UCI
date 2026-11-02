@@ -45,6 +45,7 @@ import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.uciasistant.core.clinicaldata.ClinicalPopulation
 import org.uciasistant.core.designsystem.PrototypeNotice
 
 @Composable
@@ -411,6 +412,7 @@ private fun ProcedureTopicCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                ReferenceReviewMetadata(source)
                 source.licenseNote?.let { license ->
                     Text(
                         text = "Licencia: $license",
@@ -456,6 +458,7 @@ private fun SourceReferenceCard(reference: ClinicalReference) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            ReferenceReviewMetadata(reference)
             reference.licenseNote?.let { license ->
                 Text(
                     text = "Licencia: $license",
@@ -465,6 +468,32 @@ private fun SourceReferenceCard(reference: ClinicalReference) {
             }
         }
     }
+}
+
+@Composable
+private fun ReferenceReviewMetadata(reference: ClinicalReference) {
+    Text(
+        text = "Población etiquetada: ${reference.population.displayLabel()}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Text(
+        text = "Estado de revisión de derechos: ${reference.rightsReviewStatus.displayLabel()}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+private fun ClinicalPopulation.displayLabel(): String = when (this) {
+    ClinicalPopulation.ADULT -> "adulta"
+    ClinicalPopulation.PEDIATRIC -> "pediátrica"
+    ClinicalPopulation.NEONATAL -> "neonatal"
+}
+
+private fun ReferenceRightsReviewStatus.displayLabel(): String = when (this) {
+    ReferenceRightsReviewStatus.NOT_ASSESSED -> "no evaluados"
+    ReferenceRightsReviewStatus.LICENSE_IDENTIFIED_COMPATIBILITY_PENDING ->
+        "licencia identificada; compatibilidad y reutilización pendientes"
 }
 
 @Composable

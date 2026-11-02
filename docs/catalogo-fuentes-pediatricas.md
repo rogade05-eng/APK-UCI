@@ -2,7 +2,7 @@
 
 **Estado:** metadatos de fuentes candidatas; no es una biblioteca de protocolos ni una aprobación clínica.
 
-El catálogo mostrado en `:feature:protocols` conserva títulos, dominio, cita y DOI o ISBN para orientar futuras revisiones, además de un índice separado de temas procedimentales candidatos. No incluye textos completos, resúmenes terapéuticos, tablas, puntos de corte ni algoritmos. Ninguna referencia se presenta como protocolo institucional o como recomendación aprobada.
+El catálogo mostrado en `:feature:protocols` conserva títulos, dominio, cita y DOI o ISBN para orientar futuras revisiones, además de un índice separado de temas procedimentales candidatos. Cada referencia lleva población tipada y un estado tipado de revisión de derechos, visibles en la UI; son metadatos de seguimiento, no validación local, autorización de reutilización ni aprobación clínica. Ocho referencias tienen derechos `NOT_ASSESSED`; para la referencia WHO ETAT se registró `LICENSE_IDENTIFIED_COMPATIBILITY_PENDING`: la licencia CC BY-NC-SA 3.0 IGO se identificó, pero la compatibilidad de distribución y los derechos de materiales de terceros siguen pendientes. No se marca ninguna fuente como despejada o aprobada. El catálogo no incluye textos completos, resúmenes terapéuticos, tablas, puntos de corte ni algoritmos. Ninguna referencia se presenta como protocolo institucional o como recomendación aprobada.
 
 ## Referencias candidatas incluidas
 

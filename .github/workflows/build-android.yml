@@ -103,7 +103,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run encrypted storage instrumentation tests
+      - name: Run encrypted storage and clinical-data ledger instrumentation tests
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -112,7 +112,7 @@ jobs:
           emulator-boot-timeout: 600
           disable-animations: true
           script: |
-            bash -o pipefail -c './gradlew --no-daemon :feature:alerts:connectedDebugAndroidTest :feature:protocols:connectedDebugAndroidTest :feature:handoff:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/android-test.log"'
+            bash -o pipefail -c './gradlew --no-daemon :core:clinicaldata:connectedDebugAndroidTest :feature:alerts:connectedDebugAndroidTest :feature:protocols:connectedDebugAndroidTest :feature:handoff:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/android-test.log"'
 
       - name: Report instrumentation diagnostics
         if: failure()
