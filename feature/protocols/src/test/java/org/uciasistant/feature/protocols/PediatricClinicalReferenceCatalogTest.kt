@@ -16,7 +16,13 @@ class PediatricClinicalReferenceCatalogTest {
             assertTrue(reference.domain.isNotBlank())
             assertTrue(reference.title.isNotBlank())
             assertTrue(reference.citation.isNotBlank())
-            assertTrue(reference.doi.startsWith("10."))
+            assertTrue(reference.identifierLabel in setOf("DOI", "ISBN"))
+            assertTrue(reference.identifier.isNotBlank())
+            if (reference.identifierLabel == "DOI") {
+                assertTrue(reference.identifier.startsWith("10."))
+            } else {
+                assertTrue(reference.identifier.startsWith("978"))
+            }
         }
     }
 }

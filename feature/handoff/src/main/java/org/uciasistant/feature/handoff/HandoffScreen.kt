@@ -1,5 +1,6 @@
 package org.uciasistant.feature.handoff
 
+import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,14 +19,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import java.util.Date
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.uciasistant.core.designsystem.PrototypeNotice
 import org.uciasistant.core.designsystem.UciAssistantTheme
 
@@ -34,17 +42,102 @@ private enum class DraftAction {
     Clear,
 }
 
-/** A temporary, non-persistent handoff form. It is not an official clinical record. */
+/** Local encrypted handoff snapshots, not a complete patient record or official chart. */
 @Composable
 fun HandoffScreen(onBack: () -> Unit) {
+    val context = LocalContext.current.applicationContext
+    val store = remember(context) { EncryptedHandoffStore(context) }
+    val coroutineScope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(HandoffDraft()) }
+    var records by remember { mutableStateOf(emptyList<StoredHandoffRecord>()) }
+    var isLoadingRecords by remember { mutableStateOf(true) }
+    var isSaving by remember { mutableStateOf(false) }
+    var storageError by remember { mutableStateOf<String?>(null) }
+    var feedback by remember { mutableStateOf<String?>(null) }
+    var feedbackIsError by remember { mutableStateOf(false) }
     var pendingAction by remember { mutableStateOf<DraftAction?>(null) }
+    var pendingDeleteId by remember { mutableStateOf<String?>(null) }
+    var expandedRecordId by remember { mutableStateOf<String?>(null) }
+
+    suspend fun reloadRecords() {
+        isLoadingRecords = true
+        val result = withContext(Dispatchers.IO) {
+            runCatching { store.listRecords() }
+        }
+        result.fold(
+            onSuccess = {
+                records = it
+                storageError = null
+            },
+            onFailure = {
+                storageError = "No se pudo leer el archivo cifrado local. No se han omitido ni borrado registros."
+            },
+        )
+        isLoadingRecords = false
+    }
+
+    LaunchedEffect(store) {
+        reloadRecords()
+    }
 
     fun requestExit() {
         if (draft.hasContent) {
             pendingAction = DraftAction.Exit
         } else {
             onBack()
+        }
+    }
+
+    fun saveDraft() {
+        if (!draft.hasContent || isSaving || isLoadingRecords || storageError != null) return
+        val snapshot = draft
+        isSaving = true
+        feedback = null
+        feedbackIsError = false
+        coroutineScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { store.saveNew(snapshot) }
+            }
+            result.fold(
+                onSuccess = {
+                    draft = HandoffDraft()
+                    feedback = "Borrador cifrado guardado en este dispositivo."
+                    reloadRecords()
+                },
+                onFailure = { error ->
+                    feedback = if (error is IllegalArgumentException) {
+                        "No se guardó: reduce la longitud de los campos y vuelve a intentarlo."
+                    } else {
+                        "No se pudo guardar el borrador cifrado. El texto sigue en pantalla; no cierres si necesitas conservarlo."
+                    }
+                    feedbackIsError = true
+                },
+            )
+            isSaving = false
+        }
+    }
+
+    fun deleteRecord(id: String) {
+        coroutineScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    if (!store.deleteRecord(id)) {
+                        error("No se pudo eliminar el borrador local.")
+                    }
+                }
+            }
+            result.fold(
+                onSuccess = {
+                    pendingDeleteId = null
+                    if (expandedRecordId == id) expandedRecordId = null
+                    feedback = "Borrador eliminado del almacenamiento local."
+                    reloadRecords()
+                },
+                onFailure = {
+                    pendingDeleteId = null
+                    storageError = "No se pudo eliminar el archivo local."
+                },
+            )
         }
     }
 
@@ -57,13 +150,13 @@ fun HandoffScreen(onBack: () -> Unit) {
         val isExit = actionToConfirm == DraftAction.Exit
         AlertDialog(
             onDismissRequest = { pendingAction = null },
-            title = { Text(if (isExit) "Descartar borrador" else "Borrar campos") },
+            title = { Text(if (isExit) "Descartar texto sin guardar" else "Borrar campos") },
             text = {
                 Text(
                     if (isExit) {
-                        "Al salir, el texto temporal se perderá. No se ha guardado ni enviado."
+                        "El texto que aún no se ha guardado se perderá. Los borradores cifrados existentes no se modificarán."
                     } else {
-                        "Se borrará todo el texto de esta pantalla. No se puede recuperar."
+                        "Se borrará el texto temporal de esta pantalla. Los borradores guardados no se modificarán."
                     },
                 )
             },
@@ -75,6 +168,7 @@ fun HandoffScreen(onBack: () -> Unit) {
                             onBack()
                         } else {
                             draft = HandoffDraft()
+                            feedback = null
                         }
                     },
                 ) {
@@ -84,6 +178,29 @@ fun HandoffScreen(onBack: () -> Unit) {
             dismissButton = {
                 TextButton(onClick = { pendingAction = null }) {
                     Text("Seguir editando")
+                }
+            },
+        )
+    }
+
+    val recordToDelete = pendingDeleteId
+    if (recordToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { pendingDeleteId = null },
+            title = { Text("Eliminar borrador local") },
+            text = {
+                Text(
+                    "Se eliminará el archivo cifrado de la aplicación. No se podrá recuperar desde esta pantalla; la eliminación no garantiza borrado físico irrecuperable en memoria flash.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { deleteRecord(recordToDelete) }) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteId = null }) {
+                    Text("Cancelar")
                 }
             },
         )
@@ -109,7 +226,7 @@ fun HandoffScreen(onBack: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Plantilla temporal para estructurar datos de un traslado pediátrico.",
+                    text = "Borradores pediátricos de traspaso, cifrados y guardados solo en este dispositivo.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -118,18 +235,18 @@ fun HandoffScreen(onBack: () -> Unit) {
             PrototypeNotice(modifier = Modifier.fillMaxWidth())
 
             NoticeCard(
-                title = "Solo en memoria · no es el registro oficial",
-                body = "El texto permanece únicamente mientras esta pantalla está abierta. No se guarda, cifra, exporta, copia ni sincroniza. No introduzcas datos reales de pacientes ni uses esta plantilla para una entrega asistencial.",
+                title = "Almacenamiento local cifrado · no es la historia clínica",
+                body = "Los borradores guardados se cifran con AES-GCM y una clave de Android Keystore. No se exportan ni sincronizan. Si se borran los datos de la app o se pierde la clave, no hay recuperación. No introduzcas datos reales: aún faltan autenticación, roles, auditoría de cambios, una política de retención y autorización institucional. La clave no requiere autenticación del usuario.",
             )
 
             NoticeCard(
                 title = "Sin escalas ni prioridades predefinidas",
-                body = "El motivo, la prioridad y la referencia a criterios locales son campos de texto manuales. La app no asigna prioridad, no evalúa admisión o destino y no genera una decisión clínica.",
+                body = "El motivo, la prioridad y la referencia a criterios locales son campos manuales. La app no asigna prioridad, no evalúa admisión o destino y no genera una decisión clínica.",
             )
 
             FormSection(
                 title = "Referencia y destino",
-                description = "Usa solo códigos de episodio ficticios en este prototipo.",
+                description = "Usa únicamente códigos y contenido ficticios en este prototipo.",
             ) {
                 TextEntry(
                     label = "Código de episodio local (no nombre del paciente)",
@@ -270,20 +387,177 @@ fun HandoffScreen(onBack: () -> Unit) {
             }
 
             TextButton(
+                onClick = ::saveDraft,
+                enabled = draft.hasContent && !isSaving && !isLoadingRecords && storageError == null,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (isSaving) "Guardando cifrado…" else "Guardar nuevo borrador cifrado")
+            }
+            TextButton(
                 onClick = { pendingAction = DraftAction.Clear },
                 enabled = draft.hasContent,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Borrar todo el borrador")
+                Text("Borrar el texto sin guardar")
             }
 
+            if (feedback != null) {
+                Text(
+                    text = feedback.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (feedbackIsError) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                )
+            }
+            if (storageError != null) {
+                Text(
+                    text = storageError.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
+            SavedRecordsSection(
+                records = records,
+                isLoading = isLoadingRecords,
+                storageError = storageError,
+                expandedRecordId = expandedRecordId,
+                onToggleExpanded = { id ->
+                    expandedRecordId = if (expandedRecordId == id) null else id
+                },
+                onDelete = { pendingDeleteId = it },
+            )
+
             Text(
-                text = "Especificación de referencia: PAT-CONT-01 de la adenda técnica. Esta pantalla no implementa persistencia, auditoría, firma, autorización institucional ni integración con historia clínica.",
+                text = "PAT-CONT-01 · Los registros son snapshots inmutables; cada guardado crea un archivo nuevo. No hay historia de correcciones, identidad de autor ni integración con el registro oficial.",
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun SavedRecordsSection(
+    records: List<StoredHandoffRecord>,
+    isLoading: Boolean,
+    storageError: String?,
+    expandedRecordId: String?,
+    onToggleExpanded: (String) -> Unit,
+    onDelete: (String) -> Unit,
+) {
+    FormSection(
+        title = "Borradores guardados en este dispositivo",
+        description = "Solo se muestran registros que pueden descifrarse correctamente. No existe sincronización ni respaldo configurado por la app.",
+    ) {
+        when {
+            isLoading -> Text("Leyendo almacenamiento cifrado…")
+            storageError != null -> Text(
+                text = "No se pudo verificar la lista; no se asume que esté vacía.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+            records.isEmpty() -> Text(
+                text = "No hay borradores guardados.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            else -> records.forEach { record ->
+                SavedRecordCard(
+                    record = record,
+                    expanded = expandedRecordId == record.id,
+                    onToggleExpanded = { onToggleExpanded(record.id) },
+                    onDelete = { onDelete(record.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SavedRecordCard(
+    record: StoredHandoffRecord,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = "CIFRADO LOCAL · BORRADOR NO OFICIAL",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = record.draft.episodeReference.ifBlank { "Sin código de episodio" },
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Guardado ${DateFormat.format("yyyy-MM-dd HH:mm", Date(record.createdAtMillis))}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "${record.draft.originInstitutionService.ifBlank { "Origen no indicado" }} → " +
+                    record.draft.destinationService.ifBlank { "Destino no indicado" },
+                style = MaterialTheme.typography.bodySmall,
+            )
+            TextButton(onClick = onToggleExpanded) {
+                Text(if (expanded) "Ocultar detalle" else "Ver detalle")
+            }
+            if (expanded) {
+                HandoffRecordDetails(record.draft)
+            }
+            TextButton(onClick = onDelete) {
+                Text("Eliminar archivo local")
+            }
+        }
+    }
+}
+
+@Composable
+private fun HandoffRecordDetails(draft: HandoffDraft) {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        DetailField("Tipo", draft.transferType)
+        DetailField("Motivo", draft.transferReason)
+        DetailField("Prioridad local", draft.localPriority)
+        DetailField("Referencia de criterio", draft.localCriteriaReference)
+        DetailField("Solicitud / derivación", draft.referralDateTime)
+        DetailField("Salida", draft.departureDateTime)
+        DetailField("Recepción", draft.arrivalDateTime)
+        DetailField("Entrega clínica", draft.handoverDateTime)
+        DetailField("Entrega", draft.sendingProfessional)
+        DetailField("Recepción por", draft.receivingProfessional)
+        DetailField("Problemas activos", draft.activeProblems)
+        DetailField("Alergias", draft.allergies)
+        DetailField("Intervenciones en curso", draft.interventionsInProgress)
+        DetailField("Dispositivos", draft.devices)
+        DetailField("Resultados pendientes", draft.pendingResults)
+        DetailField("Tareas pendientes", draft.outstandingTasks)
+    }
+}
+
+@Composable
+private fun DetailField(label: String, value: String) {
+    if (value.isNotBlank()) {
+        Text(
+            text = "$label: $value",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

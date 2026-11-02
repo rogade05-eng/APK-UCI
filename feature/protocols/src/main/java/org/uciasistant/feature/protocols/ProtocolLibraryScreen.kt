@@ -332,7 +332,7 @@ private fun SourceReferenceCard(reference: ClinicalReference) {
             )
             Text(text = reference.citation, style = MaterialTheme.typography.bodySmall)
             Text(
-                text = "DOI: ${reference.doi}",
+                text = "${reference.identifierLabel}: ${reference.identifier}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

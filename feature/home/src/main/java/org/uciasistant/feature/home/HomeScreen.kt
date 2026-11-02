@@ -94,8 +94,8 @@ fun HomeScreen(
             )
             AvailableFeatureCard(
                 title = "Continuidad y entrega",
-                description = "Plantilla temporal de traslado con origen, destino, tiempos y resumen estructurado. Solo funciona en memoria; no guarda ni exporta.",
-                actionLabel = "Abrir plantilla temporal",
+                description = "Borradores de traslado cifrados localmente con origen, destino, tiempos y resumen estructurado. No exporta; no usar datos reales en este prototipo.",
+                actionLabel = "Abrir borradores",
                 onClick = onOpenHandoff,
             )
 
@@ -126,14 +126,14 @@ fun HomeScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "Incluye conversión de unidades, índices/puntuaciones pediátricas y una plantilla de traspaso en memoria. No hay expediente ni almacenamiento persistente de datos de pacientes; la plantilla no guarda ni exporta. No contiene protocolos asistenciales ni genera recomendaciones, IA, diagnósticos, prescripción automática o control de equipos.",
+                        text = "Incluye conversión de unidades, índices/puntuaciones pediátricas y snapshots de traspaso cifrados localmente. No hay expediente clínico completo ni se autorizan datos reales; faltan autenticación, roles, auditoría y retención. No contiene protocolos asistenciales ni genera recomendaciones, IA, diagnósticos, prescripción automática o control de equipos.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
 
             Text(
-                text = "Sin expediente persistente · Traspaso solo temporal · Sin diagnóstico autónomo ni prescripción automática",
+                text = "Sin expediente completo · Traspaso local cifrado · No usar datos reales",
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
