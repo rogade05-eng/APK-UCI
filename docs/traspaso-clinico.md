@@ -24,7 +24,7 @@ Los campos se derivan de **PAT-CONT-01** de la [adenda al contrato técnico v1.1
 
 - Pruebas unitarias: campos vacíos, texto en blanco y orden de serialización del modelo.
 - Prueba instrumentada configurada para emulador: guardar/recuperar datos sintéticos, verificar que el texto no aparece en el archivo cifrado, borrar el archivo y comprobar que alterar el ciphertext falla la autenticación GCM.
-- **Ejecución de las nuevas pruebas de almacenamiento pendiente de CI.** No se deben presentar como verificadas hasta que la ejecución remota termine correctamente.
+- Las pruebas unitarias y de almacenamiento instrumentadas pasaron en [GitHub Actions, ejecución 41454371254](https://github.com/rogade05-eng/APK-UCI/actions/runs/41454371254), sobre `4f5ca9b`; el emulador API 34 probó datos sintéticos, no datos de pacientes.
 - Las pruebas no evalúan autenticación, roles, auditoría, resistencia física, dispositivos de fabricantes distintos, cumplimiento jurídico, usabilidad clínica ni resultados asistenciales.
 
 ## Trabajo pendiente

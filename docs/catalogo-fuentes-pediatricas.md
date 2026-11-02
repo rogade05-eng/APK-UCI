@@ -21,6 +21,10 @@ El catálogo mostrado en `:feature:protocols` conserva títulos, dominio, cita y
 
 BooksMedicos.org se utilizó únicamente como pista para descubrir una referencia de urgencias pediátricas y su edición. La edición, título e ISBN se contrastaron con la ficha editorial de [Editorial Médica Panamericana](https://www.medicapanamericana.com/es-ES/libros/urgencias-pediatricas-guia-de-actuacion-3a-edicion). No se descargó, copió ni integró el libro, sus algoritmos, capítulos o procedimientos. La inclusión bibliográfica no otorga licencia para reproducirlo ni demuestra que sus recomendaciones sean apropiadas para Cuba.
 
+## Temas de procedimiento visibles en el índice editorial
+
+La ficha oficial de la editorial incluye, entre otros, los títulos “Punción intraósea”, “Punción lumbar”, “Triage”, “Organización del traslado y estabilización prehospitalaria del paciente pediátrico” y “Ventilación con bolsa y mascarilla”, además de un tema de intubación de secuencia rápida. Se registran solo como **candidatos temáticos** para priorizar investigación; aquí no se transcriben ni implementan sus pasos, criterios o algoritmos. Cada tema deberá contrastarse con una fuente primaria vigente, derechos de adaptación y contexto institucional antes de desarrollar contenido clínico.
+
 ## Condiciones antes de publicar contenido
 
 1. Confirmar fuente primaria, edición vigente, correcciones y ámbito de población/entorno.
