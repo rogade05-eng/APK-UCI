@@ -135,7 +135,11 @@ fun ProtocolLibraryScreen(onBack: () -> Unit) {
 
                 PrototypeNotice(modifier = Modifier.fillMaxWidth())
 
-                LibrarySummaryCard(documentCount = documents.size)
+                LibrarySummaryCard(
+                    documentCount = documents.size,
+                    referenceCount = PediatricClinicalReferenceCatalog.references.size,
+                    procedureTopicCount = PediatricProcedureTopicCatalog.topics.size,
+                )
 
                 ReferenceCatalogCard(
                     expanded = showReferenceCatalog,
@@ -230,7 +234,11 @@ fun ProtocolLibraryScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun LibrarySummaryCard(documentCount: Int) {
+private fun LibrarySummaryCard(
+    documentCount: Int,
+    referenceCount: Int,
+    procedureTopicCount: Int,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -248,22 +256,22 @@ private fun LibrarySummaryCard(documentCount: Int) {
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
                 Text(
-                    text = "BIBLIOTECA NO PUBLICADA",
+                    text = "CATÁLOGO PEDIÁTRICO EN DESARROLLO",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                 )
             }
             Text(
-                text = "0 protocolos aprobados",
+                text = "$referenceCount fuentes · $procedureTopicCount temas de procedimiento",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = if (documentCount == 0) {
-                    "No hay documentos pendientes de revisión."
+                    "No hay documentos pendientes de revisión. Aún no se publican protocolos clínicos ni instrucciones de procedimientos."
                 } else {
-                    "$documentCount ${if (documentCount == 1) "documento" else "documentos"} pendiente(s) de revisión; no están publicados."
+                    "$documentCount ${if (documentCount == 1) "documento" else "documentos"} pendiente(s) de revisión; no están publicados ni sustituyen instrucciones clínicas aprobadas."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
