@@ -24,6 +24,7 @@ Para compilar localmente se requiere JDK 17 y Android SDK Platform 35. Usa `./gr
 - [Adenda al contrato técnico v1.1](docs/adenda-contrato-tecnico-v1.1.md): requisitos adoptados para continuidad asistencial, monitorización, gobierno de contenido, poblaciones, configuración local y criterios de aceptación.
 - [Evaluación del programa de especialización](docs/evaluacion-programa-especializacion-uci.md): análisis de la fuente curricular y fundamento de los cambios.
 - [Investigación bibliográfica clínica](docs/investigacion-bibliografica-clinica.md): fuentes jerarquizadas por dominio y población, límites/ventanas de escalas, licencias, validación y requisitos de seguridad, privacidad, uso offline e interoperabilidad.
+- [Investigación de decisiones y criterios de OK](docs/investigacion-decisiones-y-criterios-ok.md): propuestas investigadas y evidencia de aceptación para cada uno de los doce temas pendientes, separando desarrollo de habilitación clínica.
 - [Especificación del conversor de unidades](docs/conversor-unidades.md): alcance, unidades, reglas de formato, pruebas y fuentes técnicas.
 - [Índices pediátricos de oxigenación](docs/indices-oxigenacion.md): ecuaciones PALICC-2, entradas, condiciones y pruebas.
 - [Puntuación Phoenix pediátrica](docs/puntuacion-phoenix.md): puntuación por evaluación y dominios, exclusiones, ausencias y fuentes.
